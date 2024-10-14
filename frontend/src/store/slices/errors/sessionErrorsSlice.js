@@ -5,23 +5,20 @@ const sessionErrorsSlice = createSlice({
 	name: 'sessionErrors',
 	initialState: [],
 	reducers: {},
-	extraReducers: {
-		[loginUser.fulfilled]: (state, action) => {
+	extraReducers: (builder) => {
+		builder
+		.addCase(loginUser.fulfilled, (state, action) => {
 			state = [];
-			return state;
-		},
-		[loginUser.rejected]: (state, action) => {
+		})
+		.addCase(loginUser.rejected, (state, action) => {
 			state = Object.values(action.payload);
-			return state;
-		},
-		[signUpUser.fulfilled]: (state, action) => {
+		})
+		.addCase(signUpUser.fulfilled, (state, action) => {
 			state = [];
-			return state;
-		},
-		[signUpUser.rejected]: (state, action) => {
+		})
+		.addCase(signUpUser.rejected, (state, action) => {
 			state = Object.values(action.payload);
-			return state;
-		},
+		})
 	},
 });
 

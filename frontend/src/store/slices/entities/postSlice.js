@@ -1,9 +1,9 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, buildCreateSlice } from '@reduxjs/toolkit';
 import { createVote } from './votes';
 import axios from 'axios';
 
 export const fetchPosts = createAsyncThunk(
-	'receivePosts',
+	'posts/fetchAll',
 	async (filters, { rejectWithValue }) => {
 		try {
 			let res = await axios.get('/api/posts', filters);
@@ -15,7 +15,7 @@ export const fetchPosts = createAsyncThunk(
 );
 
 export const fetchPost = createAsyncThunk(
-	'receivePost',
+	'posts/fetchOne',
 	async (id, { rejectWithValue }) => {
 		try {
 			let res = await axios.get(`/api/posts/${id}`);
@@ -27,7 +27,7 @@ export const fetchPost = createAsyncThunk(
 );
 
 export const createPost = createAsyncThunk(
-	'receivePost',
+	'posts/create',
 	async (post, { rejectWithValue }) => {
 		try {
 			let res = await axios.post('/api/posts', post);
@@ -39,7 +39,7 @@ export const createPost = createAsyncThunk(
 );
 
 export const deletePost = createAsyncThunk(
-	'removePost',
+	'posts/delete',
 	async (postId, { rejectWithValue }) => {
 		try {
 			let res = await axios.delete(`/api/posts/${postId}`);
@@ -51,7 +51,7 @@ export const deletePost = createAsyncThunk(
 );
 
 export const updatePost = createAsyncThunk(
-	'receivePost',
+	'posts/update',
 	async (post, { rejectWithValue }) => {
 		try {
 			let res = await axios.post(`/api/posts${post._id}`, post);
@@ -66,33 +66,28 @@ const postSlice = createSlice({
 	name: 'posts',
 	initialState: {},
 	reducers: {},
-	extraReducers: {
-		[fetchPosts.fulfilled]: (state, action) => {
+	extraReducers: (builder) => {
+		builder
+		.addCase(fetchPosts.fulfilled, (state, action) => {
 			action.payload.forEach((subReddit) => {
 				state[subReddit._id] = subReddit;
 			});
-			return state;
-		},
-		[fetchPost.fulfilled]: (state, action) => {
+		})
+		.addCase(fetchPost.fulfilled, (state, action) => {
 			state[action.payload._id] = action.payload;
-			return state;
-		},
-		[createPost.fulfilled]: (state, action) => {
+		})
+		.addCase(createPost.fulfilled, (state, action) => {
 			state[action.payload._id] = action.payload;
-			return state;
-		},
-		[updatePost.fulfilled]: (state, action) => {
+		})
+		.addCase(updatePost.fulfilled, (state, action) => {
 			delete state[action.payload._id];
-			return state;
-		},
-		[deletePost.fulfilled]: (state, action) => {
+		})
+		.addCase(deletePost.fulfilled, (state, action) => {
 			state[action.payload._id] = action.payload;
-			return state;
-		},
-		[createVote.fulfilled]: (state, action) => {
+		})
+		.addCase(createVote.fulfilled, (state, action) => {
 			state[action.payload._id] = action.payload;
-			return state;
-		},
+		})
 	},
 });
 

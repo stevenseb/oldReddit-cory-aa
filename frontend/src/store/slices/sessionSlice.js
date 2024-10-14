@@ -30,7 +30,7 @@ const _initialState = () => {
 };
 
 export const signUpUser = createAsyncThunk(
-	'setCurrentUser',
+	'user/signup',
 	async (userData, { rejectWithValue }) => {
 		try {
 			let res = await axios.post('/api/users/signup', userData);
@@ -49,7 +49,7 @@ export const signUpUser = createAsyncThunk(
 );
 
 export const loginUser = createAsyncThunk(
-	'setCurrentUser',
+	'user/login',
 	async (userData, { rejectWithValue }) => {
 		try {
 			let res = await axios.post('/api/users/login', userData);
@@ -78,19 +78,17 @@ const sessionSlice = createSlice({
 	name: 'session',
 	initialState: _initialState(),
 	reducers: {},
-	extraReducers: {
-		[signUpUser.fulfilled]: (state, action) => {
+	extraReducers: (builder) => {
+		builder
+		.addCase(signUpUser.fulfilled, (state, action) => {
 			state = action.payload;
-			return state;
-		},
-		[loginUser.fulfilled]: (state, action) => {
+		})
+		.addCase(loginUser.fulfilled, (state, action) => {
 			state = action.payload;
-			return state;
-		},
-		[logoutUser.fulfilled]: (state, action) => {
+		})
+		.addCase(logoutUser.fulfilled, (state, action) => {
 			state = action.payload;
-			return state;
-		},
+		})
 	},
 });
 

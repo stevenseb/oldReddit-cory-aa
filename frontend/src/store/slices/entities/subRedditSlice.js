@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 export const fetchSubReddits = createAsyncThunk(
-	'receiveSubReddits',
+	'subReddits/fetchAll',
 	async (filters, { rejectWithValue }) => {
 		try {
 			debugger;
@@ -17,7 +17,7 @@ export const fetchSubReddits = createAsyncThunk(
 );
 
 export const fetchSubReddit = createAsyncThunk(
-	'receiveSubReddit',
+	'subReddits/fetchOne',
 	async (id, { rejectWithValue }) => {
 		try {
 			let res = await axios.get(`/api/subReddits/${id}`);
@@ -29,7 +29,7 @@ export const fetchSubReddit = createAsyncThunk(
 );
 
 export const createSubReddit = createAsyncThunk(
-	'receiveSubReddit',
+	'subReddits/create',
 	async (subReddit, { rejectWithValue }) => {
 		try {
 			let res = await axios.post('/api/subReddits', subReddit);
@@ -41,7 +41,7 @@ export const createSubReddit = createAsyncThunk(
 );
 
 export const deleteSubReddit = createAsyncThunk(
-	'removeSubReddit',
+	'subReddits/delete',
 	async (subRedditId, { rejectWithValue }) => {
 		try {
 			let res = await axios.delete(`/api/subReddits/${subRedditId}`);
@@ -53,7 +53,7 @@ export const deleteSubReddit = createAsyncThunk(
 );
 
 export const updateSubReddit = createAsyncThunk(
-	'receiveSubReddit',
+	'subReddits/update',
 	async (subReddit, { rejectWithValue }) => {
 		try {
 			let res = await axios.patch(`/api/subReddits${subReddit._id}`, subReddit);
@@ -65,7 +65,7 @@ export const updateSubReddit = createAsyncThunk(
 );
 
 export const subscribeToSubReddit = createAsyncThunk(
-	'receiveSubReddit',
+	'subReddits/subscribe',
 	async (subReddit, { rejectWithValue }) => {
 		try {
 			let res = await axios.post(`/api/subReddits${subReddit._id}`, subReddit);
@@ -80,29 +80,25 @@ const subRedditSlice = createSlice({
 	name: 'subReddits',
 	initialState: {},
 	reducers: {},
-	extraReducers: {
-		[fetchSubReddits.fulfilled]: (state, action) => {
+	extraReducers: (builder) => {
+		builder
+		.addCase(fetchSubReddits.fulfilled, (state, action) => {
 			action.payload.forEach((subReddit) => {
 				state[subReddit._id] = subReddit;
 			});
-			return state;
-		},
-		[fetchSubReddit.fulfilled]: (state, action) => {
+		})
+		.addCase(fetchSubReddit.fulfilled, (state, action) => {
 			state[action.payload._id] = action.payload;
-			return state;
-		},
-		[createSubReddit.fulfilled]: (state, action) => {
+		})
+		.addCase(createSubReddit.fulfilled, (state, action) => {
 			state[action.payload._id] = action.payload;
-			return state;
-		},
-		[deleteSubReddit.fulfilled]: (state, action) => {
+		})
+		.addCase(deleteSubReddit.fulfilled, (state, action) => {
 			delete state[action.payload._id];
-			return state;
-		},
-		[updateSubReddit.fulfilled]: (state, action) => {
+		})
+		.addCase(updateSubReddit.fulfilled, (state, action) => {
 			state[action.payload._id] = action.payload;
-			return state;
-		},
+		})
 	},
 });
 

@@ -40,20 +40,17 @@ router.get('/', async (req, res) => {
 			postsQuery = postsQuery.sort({ createdAt: -1 });
 		} else if (view === 'Top') {
 			// Sort by vote count (highest first)
-			postsQuery = postsQuery.sort({ voteCount: -1 });
+			postsQuery = postsQuery.sort({ netUpvotes: -1 });
 		} else {
 			// Default to 'Hot' sorting: by vote count and recency
 			postsQuery = postsQuery.sort({
-				voteCount: -1,
+				netUpvotes: -1,
 				createdAt: -1, // Secondary sort by recency for ties in vote count
 			});
 		}
-
-		console.log("SUBREDDITID", subRedditId)
-		
 		// Execute the query and return the posts
 		const posts = await postsQuery.exec();
-		console.log("POSTS: ", posts)
+		
 		return res.json(posts);
 	} catch (errors) {
 		res.status(400).json(errors);

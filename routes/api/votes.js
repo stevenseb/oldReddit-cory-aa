@@ -32,11 +32,11 @@ router.post(
 );
 
 const handleVoteOnPost = async (req) => {
-	const [post, votes] = await Promise.all([
+	const [post, vote] = await Promise.all([
 		Post.findById(req.body.postId),
-		Vote.find({ postId: req.body.postId }),
+		Vote.findOne({ postId: req.body.postId, userId: req.user.id }),
 	]);
-	return handleVote(req, post, votes);
+	return handleVote(req, post, vote);
 };
 
 const handleVoteOnComment = async (req) => {
@@ -47,34 +47,26 @@ const handleVoteOnComment = async (req) => {
 	return handleVote(req, comment, votes);
 };
 
-const handleVote = async (req, document, votes) => {
-	let hasVoted;
+const handleVote = async (req, document, vote) => {
 	let voteToSave;
-
-	for (let i = 0; i < votes.length; i++) {
-		let vote = votes[i];
-		if (vote.userId == req.user.id) {
-			hasVoted = true;
-			if (vote.value == req.body.value) {
-				vote.value -= req.body.value;
-				document.voteCount -= req.body.value;
-			} else {
-				if (vote.value != 0) {
-					if (req.body.value == -1) {
-						document.voteCount += req.body.value - 1;
-					} else {
-						document.voteCount += req.body.value + 1;
-					}
-				} else {
-					document.voteCount += req.body.value;
-				}
-				vote.value = req.body.value;
-			}
+	
+	// Check if the user has already voted
+	if (vote?.userId.toString() == req?.user?._id.toString()) {
+		// If the user is trying to vote the same value again, we don't allow double voting
+		if (vote.value === req.body.value) {
+			// Reset the vote and subtract the original vote value from netUpvotes
+			document.netUpvotes -= vote.value;
+			vote.value = 0;
+			voteToSave = vote;
+		} else {
+			// If the user changes the vote (e.g., from upvote to downvote)
+			// Adjust netUpvotes accordingly
+			document.netUpvotes += req.body.value - vote.value;
+			vote.value = req.body.value;
 			voteToSave = vote;
 		}
-	}
-
-	if (!hasVoted) {
+	} else {
+		// If the user hasn't voted yet, create a new vote
 		voteToSave = new Vote({
 			userId: req.user.id,
 			value: req.body.value,
@@ -84,10 +76,11 @@ const handleVote = async (req, document, votes) => {
 		} else {
 			voteToSave.commentId = req.body.commentId;
 		}
-		document.votes.push(voteToSave.id);
-		document.voteCount += req.body.value;
+		document.netUpvotes += req.body.value;
 	}
 
+	// Save the updated vote and the document
 	await Promise.all([voteToSave.save(), document.save()]);
+
 	return document;
 };

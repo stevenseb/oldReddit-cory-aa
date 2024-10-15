@@ -24,6 +24,7 @@ const composeComponents = (...components) => {
 };
 
 // TODO: Figure out "HOT", "NEW", "TOP" filters for home page
+// TODO: Voting
 // TODO: Fix up styling and frontend mechanics
 // TODO: Refactor into microservices for lambda
 // TODO: Swap out MongoDB for DynamoDB

@@ -5,7 +5,6 @@ export const fetchSubReddits = createAsyncThunk(
 	'subReddits/fetchAll',
 	async (filters, { rejectWithValue }) => {
 		try {
-			debugger;
 			let res = await axios.get('/api/subReddits', {
 				params: { filters },
 			});
@@ -85,19 +84,24 @@ const subRedditSlice = createSlice({
 		.addCase(fetchSubReddits.fulfilled, (state, action) => {
 			action.payload.forEach((subReddit) => {
 				state[subReddit._id] = subReddit;
+				return state
 			});
 		})
 		.addCase(fetchSubReddit.fulfilled, (state, action) => {
 			state[action.payload._id] = action.payload;
+			return state
 		})
 		.addCase(createSubReddit.fulfilled, (state, action) => {
 			state[action.payload._id] = action.payload;
+			return state
 		})
 		.addCase(deleteSubReddit.fulfilled, (state, action) => {
 			delete state[action.payload._id];
+			return state
 		})
 		.addCase(updateSubReddit.fulfilled, (state, action) => {
 			state[action.payload._id] = action.payload;
+			return state
 		})
 	},
 });

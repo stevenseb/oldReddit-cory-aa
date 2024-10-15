@@ -18,26 +18,14 @@ const PostSchema = new Schema(
 		body: {
 			type: String,
 		},
-		voteCount: {
+		netUpvotes: {
 			type: Number,
 			default: 0,
 		},
-		votes: [
-			{
-				type: Schema.Types.ObjectId,
-				ref: 'votes',
-			},
-		],
 		subReddits: [
 			{
 				type: Schema.Types.ObjectId,
 				ref: 'subReddits',
-			},
-		],
-		comments: [
-			{
-				type: Schema.Types.ObjectId,
-				ref: 'comments',
 			},
 		],
 	},

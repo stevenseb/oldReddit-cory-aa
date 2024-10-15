@@ -22,7 +22,7 @@ export const PostIndex = (props) => {
 	}, [dispatch]);
 
 	if (!hooksReady) return <div></div>;
-
+	console.log("RENDERING POST INDEX")
 	const renderPosts = () => {
 		return (
 			<ul className="post-index">

@@ -12,8 +12,32 @@ module.exports = router;
 
 router.get('/', async (req, res) => {
 	try {
-		let posts = await Post.find().sort({ voteCount: -1 });
-		// if (!posts) return res.status(404).json({ noPostsFound: 'No posts found' });
+		const { view, subRedditId } = req.query;
+
+		if (!subRedditId) {
+			return res.status(400).json({ error: "subRedditId is required" });
+		}
+
+		let postsQuery = Post.find({ subRedditId }); // Filter by subRedditId
+
+		// Apply sorting based on the view filter
+		if (view === 'New') {
+			// Sort by creation date (newest first)
+			postsQuery = postsQuery.sort({ createdAt: -1 });
+		} else if (view === 'Top') {
+			// Sort by vote count (highest first)
+			postsQuery = postsQuery.sort({ voteCount: -1 });
+		} else {
+			// Default to 'Hot' sorting: by vote count and recency
+			postsQuery = postsQuery.sort({
+				voteCount: -1,
+				createdAt: -1, // Secondary sort by recency for ties in vote count
+			});
+		}
+
+		// Execute the query
+		const posts = await postsQuery.exec();
+
 		return res.json(posts);
 	} catch (errors) {
 		res.status(400).json(errors);

@@ -5,24 +5,25 @@ import { PostIndexItem } from './postIndexItem';
 import { VoteButton } from '../votes/voteButton';
 require('./postIndex.css');
 
-export const PostIndex = (props) => {
+export const PostIndex = ({subRedditId}) => {
 	const [hooksReady, setHooksReady] = useState(false);
 	const [posts, setPosts] = useState([]);
+	const [filter, setFilter] = useState({view: "Hot", subRedditId}); // Default filter is "Hot"
 	const dispatch = useDispatch();
 
 	useEffect(() => {
-		const fetchPostFromUseEffect = async () => {
-			let res = await dispatch(fetchPosts());
-			if (res.type === 'receivePosts/fulfilled') {
+		const fetchPostsWithFilter = async () => {
+			let res = await dispatch(fetchPosts(filter));
+			if (res.type === 'posts/fetchAll/fulfilled') {
 				setPosts(Object.values(res.payload));
 				setHooksReady(true);
 			}
 		};
-		fetchPostFromUseEffect();
-	}, [dispatch]);
+		fetchPostsWithFilter();
+	}, [dispatch, filter]);
 
 	if (!hooksReady) return <div></div>;
-	console.log("RENDERING POST INDEX")
+	console.log(filter)
 	const renderPosts = () => {
 		return (
 			<ul className="post-index">
@@ -35,5 +36,15 @@ export const PostIndex = (props) => {
 			</ul>
 		);
 	};
-	return renderPosts();
+	return (
+		<div>
+			{/* Filter buttons */}
+			<div className="post-filters">
+				<button onClick={() => setFilter({view: "Hot", subRedditId})}>Hot</button>
+				<button onClick={() => setFilter({view: "New", subRedditId})}>New</button>
+				<button onClick={() => setFilter({view: "Top", subRedditId})}>Top</button>
+			</div>
+			{renderPosts()}
+		</div>
+	);
 };

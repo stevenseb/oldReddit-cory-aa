@@ -35,17 +35,17 @@ function App() {
 	return (
 		<div className="App">
 			<BrowserRouter>
-				<SubRedditIndex />
 				<header className="App-header">
 					<Header />
 				</header>
+				<SubRedditIndex />
 
 				<Switch>
-					<Route
+					{/* <Route
 						exact
 						path="/"
 						component={composeComponents(SessionForm, PostIndex)}
-					/>
+					/> */}
 					<AuthRoute exact path="/login" component={SessionForm} />
 					<AuthRoute exact path="/signup" component={SessionForm} />
 					<ProtectedRoute exact path="/posts/new" component={PostForm} />

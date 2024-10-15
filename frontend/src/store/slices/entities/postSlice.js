@@ -1,6 +1,14 @@
 import { createSlice, createAsyncThunk, buildCreateSlice } from '@reduxjs/toolkit';
 import { createVote } from './votes';
+import { createSelector } from 'reselect';
 import axios from 'axios';
+
+const selectPosts = (state) => state.entities.posts;
+
+export const selectPostArray = createSelector(
+	[selectPosts],
+	(posts) => (posts ? Object.values(posts) : [])
+);
 
 export const fetchPosts = createAsyncThunk(
 	'posts/fetchAll',

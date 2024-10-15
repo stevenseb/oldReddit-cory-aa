@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchPosts, clearPosts } from '../../store/slices/entities/postSlice';
+import { fetchPosts, clearPosts, selectPostArray } from '../../store/slices/entities/postSlice';
 import { PostIndexItem } from './postIndexItem';
 import { VoteButton } from '../votes/voteButton';
 require('./postIndex.css');
 
 export const PostIndex = (props) => {
 	const [hooksReady, setHooksReady] = useState(false);
-	const posts = useSelector((state) => {	
-		return state?.entities?.posts ? Object.values(state.entities.posts) : [];
-	});
+	const posts = useSelector(selectPostArray); // Use the memoized selector
 	const [filter, setFilter] = useState({view: "Hot", subRedditId: props.match.params.id}); // Default filter is "Hot"
 	const dispatch = useDispatch();
 

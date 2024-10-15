@@ -11,6 +11,7 @@ export const SubRedditIndex = (props) => {
 	});
 	const user = useSelector((state) => state.session);
 	const dispatch = useDispatch();
+	
 	useEffect(() => {
 		const fetchSubs = async () => {
 			let res = await dispatch(fetchSubReddits(user.id));

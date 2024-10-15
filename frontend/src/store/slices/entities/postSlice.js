@@ -6,7 +6,7 @@ export const fetchPosts = createAsyncThunk(
 	'posts/fetchAll',
 	async (filters, { rejectWithValue }) => {
 		try {
-			let res = await axios.get('/api/posts', filters);
+			let res = await axios.get('/api/posts', {params: {filters}});
 			return res.data;
 		} catch (err) {
 			return rejectWithValue(err.response.data);
@@ -65,30 +65,43 @@ export const updatePost = createAsyncThunk(
 const postSlice = createSlice({
 	name: 'posts',
 	initialState: {},
-	reducers: {},
+	reducers: {
+		clearPosts: (state) => {
+			state = {};  // Clears the posts array
+			return state
+		}
+	},
 	extraReducers: (builder) => {
 		builder
 		.addCase(fetchPosts.fulfilled, (state, action) => {
 			action.payload.forEach((subReddit) => {
 				state[subReddit._id] = subReddit;
+				return state
 			});
 		})
 		.addCase(fetchPost.fulfilled, (state, action) => {
 			state[action.payload._id] = action.payload;
+			return state
 		})
 		.addCase(createPost.fulfilled, (state, action) => {
 			state[action.payload._id] = action.payload;
+			return state
 		})
 		.addCase(updatePost.fulfilled, (state, action) => {
 			delete state[action.payload._id];
+			return state
 		})
 		.addCase(deletePost.fulfilled, (state, action) => {
 			state[action.payload._id] = action.payload;
+			return state
 		})
 		.addCase(createVote.fulfilled, (state, action) => {
 			state[action.payload._id] = action.payload;
+			return state
 		})
 	},
 });
+
+export const { clearPosts } = postSlice.actions;
 
 export default postSlice.reducer;

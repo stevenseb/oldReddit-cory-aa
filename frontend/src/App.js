@@ -49,7 +49,7 @@ function App() {
 					<AuthRoute exact path="/login" component={SessionForm} />
 					<AuthRoute exact path="/signup" component={SessionForm} />
 					<ProtectedRoute exact path="/posts/new" component={PostForm} />
-					<ProtectedRoute exact path="/posts/:id" component={PostShow} />
+					{/* <ProtectedRoute exact path="/posts/:id" component={PostShow} /> */}
 					<ProtectedRoute
 						exact
 						path="/subReddits/new"
@@ -58,9 +58,9 @@ function App() {
 					<ProtectedRoute
 						exact
 						path="/subReddits/:id"
-						component={SubRedditShow}
+						component={PostIndex}
 					/>
-					<ProtectedRoute exact path="/home" component={PlaceHolder} />
+					{/* <ProtectedRoute exact path="/home" component={PlaceHolder} /> */}
 				</Switch>
 				<SideBar />
 			</BrowserRouter>

@@ -22,12 +22,6 @@ const PostSchema = new Schema(
 			type: Number,
 			default: 0,
 		},
-		subReddits: [
-			{
-				type: Schema.Types.ObjectId,
-				ref: 'subReddits',
-			},
-		],
 	},
 	{ timestamps: true }
 );

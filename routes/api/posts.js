@@ -12,15 +12,29 @@ module.exports = router;
 
 router.get('/', async (req, res) => {
 	try {
-		const { view, subRedditId } = req.query;
-
+		const { view, subRedditId } = JSON.parse(req.query?.filters);
+		
+		// Ensure subRedditId is provided
 		if (!subRedditId) {
 			return res.status(400).json({ error: "subRedditId is required" });
 		}
 
-		let postsQuery = Post.find({ subRedditId }); // Filter by subRedditId
+		// Step 1: Get postIds from PostSub based on subRedditId
+		const postSubs = await PostSub.find({ subId: subRedditId }).select('postId');
 
-		// Apply sorting based on the view filter
+		// If no postSubs are found, return an empty array
+		if (!postSubs.length) {
+			console.log("No posts found")
+			return res.json([]);
+		}
+
+		// Extract postIds from the PostSub documents
+		const postIds = postSubs.map(postSub => postSub.postId);
+
+		// Step 2: Query the Post collection using the postIds
+		let postsQuery = Post.find({ _id: { $in: postIds } });
+
+		// Step 3: Apply sorting based on the view filter
 		if (view === 'New') {
 			// Sort by creation date (newest first)
 			postsQuery = postsQuery.sort({ createdAt: -1 });
@@ -35,9 +49,11 @@ router.get('/', async (req, res) => {
 			});
 		}
 
-		// Execute the query
+		console.log("SUBREDDITID", subRedditId)
+		
+		// Execute the query and return the posts
 		const posts = await postsQuery.exec();
-
+		console.log("POSTS: ", posts)
 		return res.json(posts);
 	} catch (errors) {
 		res.status(400).json(errors);
@@ -103,10 +119,13 @@ router.post(
 				url: req.body.url,
 				body: req.body.body,
 			});
-
-			newPost.subReddits.push(req.body.subId);
-			sub.posts.push(newPost.id);
-			await Promise.all([newPost.save(), sub.save()]);
+			const postSub = new PostSub({
+				postId: newPost._id,
+				subId: sub._id
+			})
+			// newPost.subReddits.push(req.body.subId);
+			// sub.posts.push(newPost.id);
+			await Promise.all([newPost.save(), postSub.save()]);
 			res.json(newPost);
 		} catch (errors) {
 			res.status(400).json(errors);

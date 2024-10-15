@@ -23,7 +23,6 @@ const composeComponents = (...components) => {
 	);
 };
 
-// TODO: Refactor DB Schema and Redux State Shape
 // TODO: Figure out "HOT", "NEW", "TOP" filters for home page
 // TODO: Fix up styling and frontend mechanics
 // TODO: Refactor into microservices for lambda

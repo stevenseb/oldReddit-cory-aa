@@ -67,7 +67,7 @@ export const loginUser = createAsyncThunk(
 	}
 );
 
-export const logoutUser = createAsyncThunk('setCurrentUser', async () => {
+export const logoutUser = createAsyncThunk('user/logout', async () => {
 	localStorage.removeItem('jwtToken');
 	// Remove auth header for future requests
 	setAuthToken(false);
@@ -82,12 +82,15 @@ const sessionSlice = createSlice({
 		builder
 		.addCase(signUpUser.fulfilled, (state, action) => {
 			state = action.payload;
+			return state
 		})
 		.addCase(loginUser.fulfilled, (state, action) => {
 			state = action.payload;
+			return state
 		})
 		.addCase(logoutUser.fulfilled, (state, action) => {
 			state = action.payload;
+			return state
 		})
 	},
 });

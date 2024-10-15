@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchSubReddits } from '../../store/slices/entities/subRedditSlice';
+import { fetchSubReddits, selectSubRedditsArray } from '../../store/slices/entities/subRedditSlice';
 import { SubRedditIndexItem } from './subRedditIndexItem';
 require('./subRedditIndex.css');
 
 export const SubRedditIndex = (props) => {
 	const [hooksReady, setHooksReady] = useState(false);
-	const subReddits = useSelector((state) => {
-		return state?.entities?.subReddits ? Object.values(state.entities.subReddits) : [];
-	});
+	const subReddits = useSelector(selectSubRedditsArray);
 	const user = useSelector((state) => state.session);
 	const dispatch = useDispatch();
-	
+
 	useEffect(() => {
 		const fetchSubs = async () => {
 			let res = await dispatch(fetchSubReddits(user.id));

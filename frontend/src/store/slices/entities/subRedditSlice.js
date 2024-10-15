@@ -1,5 +1,13 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSelector } from 'reselect';
 import axios from 'axios';
+
+const selectSubs = (state) => state.entities.subReddits;
+
+export const selectSubRedditsArray = createSelector(
+	[selectSubs],
+	(subs) => (subs ? Object.values(subs) : [])
+);
 
 export const fetchSubReddits = createAsyncThunk(
 	'subReddits/fetchAll',

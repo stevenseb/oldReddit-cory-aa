@@ -5,7 +5,7 @@ import { CommentIndexItem } from '../comments/commentIndexItem';
 import { CommentForm } from '../comments/commentForm';
 import { VoteButton } from '../votes/voteButton';
 import { useSelector } from 'react-redux';
-import { clearComments } from '../../store/slices/entities/commentSlice';
+import { clearComments, fetchComments } from '../../store/slices/entities/commentSlice';
 
 export const PostShow = (props) => {
 	let postId = props.match.params.id;
@@ -14,19 +14,25 @@ export const PostShow = (props) => {
 	const comments = useSelector((state) =>
 		Object.values(state.entities.comments)
 	);
-	// const [statefulComments, setStatefulComments] = useState([]);
 
 	const dispatch = useDispatch();
 	useEffect(() => {
-		const fetchOnePost = async () => {
-			let res = await dispatch(fetchPost(postId));
-			if (res.type === 'posts/fetchOne/fulfilled') {
-				setHooksReady(true);
-			}
+		const fetchPostWithComments = async () => {
+			let [postRes, commentsRes] = await Promise.all([
+				dispatch(fetchPost(postId)),
+				dispatch(fetchComments(postId))
+			])
+
+			if (postRes.type === 'posts/fetchOne/fulfilled' && commentsRes.type === 'comments/fetchAll/fulfilled') {
+                setHooksReady(true);  // Set hooks ready if both fetches are successful
+            }
 		};
-		if (post?._id != postId) {
+		
+		if (!post || post?._id != postId) {
 			dispatch(clearComments());
-			fetchOnePost();
+			fetchPostWithComments();
+		} else {
+			setHooksReady(true)
 		}
 	}, [post, dispatch, postId]);
 
@@ -47,7 +53,6 @@ export const PostShow = (props) => {
 	};
 
 	if (!hooksReady) return <div></div>;
-	console.log("HOOKS READY", post)
 
 	return (
 		<div>

@@ -6,7 +6,7 @@ export const fetchComments = createAsyncThunk(
 	'comments/fetchAll',
 	async (postId, { rejectWithValue }) => {
 		try {
-			let res = await axios.get('/api/comments', postId);
+			let res = await axios.get('/api/comments', {params: {postId}});
 			return res.data;
 		} catch (err) {
 			return rejectWithValue(err.response.data);

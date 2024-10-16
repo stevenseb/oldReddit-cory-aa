@@ -10,7 +10,8 @@ module.exports = router;
 
 router.get('/', async (req, res) => {
 	try {
-		let comments = await Comment.find({ postId: req.body.postId });
+		console.log("GET ALL:", req.query)
+		let comments = await Comment.find({ postId: req.query.postId });
 		res.json(comments);
 	} catch (err) {
 		res.status(404).json({ noCommentsFound: 'No comments yet' });
@@ -25,6 +26,7 @@ router.post(
 		if (!isValid) {
 			return res.status(400).json(errors);
 		}
+		console.log("Comment is valid")
 		try {
 			const comment = new Comment({
 				userId: req.user.id,
@@ -33,22 +35,24 @@ router.post(
 			});
 
 			if (req.body.parentCommentId) {
-				// const topLevelComment = await Comment.findById(
-				// 	req.body.topLevelCommentId
-				// );
-				const [parentComment, post] = await Promise.all([
-					Comment.findById(req.body.parentCommentId),
-					Post.findById(req.body.postId),
-				]);
-				parentComment.childComments.push(comment.id);
-				post.comments.push(comment.id);
 				comment.parentCommentId = req.body.parentCommentId;
-				await Promise.all([comment.save(), post.save(), parentComment.save()]);
-			} else {
-				const post = await Post.findById(req.body.postId);
-				post.comments.push(comment.id);
-				await Promise.all([comment.save(), post.save()]);
+			// 	// const topLevelComment = await Comment.findById(
+			// 	// 	req.body.topLevelCommentId
+			// 	// );
+			// 	const [parentComment, post] = await Promise.all([
+			// 		Comment.findById(req.body.parentCommentId),
+			// 		Post.findById(req.body.postId),
+			// 	]);
+			// 	parentComment.childComments.push(comment.id);
+			// 	post.comments.push(comment.id);
+			// 	comment.parentCommentId = req.body.parentCommentId;
+			// 	await Promise.all([comment.save(), post.save(), parentComment.save()]);
+			// } else {
+			// 	const post = await Post.findById(req.body.postId);
+			// 	post.comments.push(comment.id);
+			// 	await Promise.all([comment.save(), post.save()]);
 			}
+			comment.save()
 
 			res.json(comment);
 		} catch (errors) {

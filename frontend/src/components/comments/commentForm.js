@@ -44,7 +44,7 @@ export const CommentForm = (props) => {
 			parentCommentId,
 		};
 		let res = await dispatch(createComment(comment));
-		if ((res.type = 'receiveComment/fulfilled')) {
+		if ((res.type = 'comments/create/fulfilled')) {
 			setBody('');
 		}
 	};

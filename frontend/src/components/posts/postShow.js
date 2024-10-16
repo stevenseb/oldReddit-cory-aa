@@ -10,7 +10,7 @@ import { clearComments } from '../../store/slices/entities/commentSlice';
 export const PostShow = (props) => {
 	let postId = props.match.params.id;
 	const [hooksReady, setHooksReady] = useState(false);
-	const [post, setPost] = useState({});
+	const post = useSelector(state => state?.entities?.posts[props?.match?.params?.id]);
 	const comments = useSelector((state) =>
 		Object.values(state.entities.comments)
 	);
@@ -18,26 +18,21 @@ export const PostShow = (props) => {
 
 	const dispatch = useDispatch();
 	useEffect(() => {
-		let mounted = true;
-		const fetchPostWithComments = async () => {
+		const fetchOnePost = async () => {
 			let res = await dispatch(fetchPost(postId));
-			if (mounted && res.type === 'receivePost/fulfilled') {
-				setPost(res.payload);
+			if (res.type === 'posts/fetchOne/fulfilled') {
 				setHooksReady(true);
 			}
 		};
-		if (post._id != postId) {
+		if (post?._id != postId) {
 			dispatch(clearComments());
-			fetchPostWithComments();
+			fetchOnePost();
 		}
-		// cleanup function
-		return () => (mounted = false);
 	}, [post, dispatch, postId]);
 
 	// useEffect(() => {
 	// 	setStatefulComments(comments);
 	// }, []);
-
 	const renderComments = () => {
 		return (
 			<ul>
@@ -52,9 +47,12 @@ export const PostShow = (props) => {
 	};
 
 	if (!hooksReady) return <div></div>;
+	console.log("HOOKS READY", post)
+
 	return (
 		<div>
 			<VoteButton postId={post._id} voteCount={post.voteCount} />
+			<span>{post.netUpvotes}</span>
 			<h1>{post.title}</h1>
 			<h2>{post.body}</h2>
 			<CommentForm postId={post._id} />

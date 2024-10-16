@@ -23,14 +23,15 @@ const composeComponents = (...components) => {
 	);
 };
 
-// TODO: Figure out "HOT", "NEW", "TOP" filters for home page
-// TODO: Voting
+// TODO: Pagination
+// TODO: Comments
 // TODO: Fix up styling and frontend mechanics
 // TODO: Refactor into microservices for lambda
 // TODO: Swap out MongoDB for DynamoDB
 // TODO: Set up Load Balancers
 // TODO: Client & Server side caching layers
-// TODO: Pagination
+// TODO: S3 Bucket for direct image uploads
+// TODO: CDN
 
 function App() {
 	return (

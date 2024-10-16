@@ -13,6 +13,7 @@ module.exports = router;
 router.get('/', async (req, res) => {
 	try {
 		const { view, subRedditId } = JSON.parse(req.query?.filters);
+		const { limit = 10, pageToken } = req.query;
 		
 		// Ensure subRedditId is provided
 		if (!subRedditId) {
@@ -27,7 +28,6 @@ router.get('/', async (req, res) => {
 			console.log("No posts found")
 			return res.json([]);
 		}
-
 		// Extract postIds from the PostSub documents
 		const postIds = postSubs.map(postSub => postSub.postId);
 
@@ -36,23 +36,72 @@ router.get('/', async (req, res) => {
 
 		// Step 3: Apply sorting based on the view filter
 		if (view === 'New') {
-			// Sort by creation date (newest first)
-			postsQuery = postsQuery.sort({ createdAt: -1 });
+			// Sort by creation date (newest first) and paginate with createdAt
+            postsQuery = postsQuery.sort({ createdAt: -1 });
+            // Pagination based on createdAt timestamp
+            if (pageToken) {
+				
+                postsQuery = postsQuery.where('createdAt').lt(new Date(pageToken));
+            }
 		} else if (view === 'Top') {
-			// Sort by vote count (highest first)
-			postsQuery = postsQuery.sort({ netUpvotes: -1 });
+			 // Sort by netUpvotes with createdAt as a secondary sort (for tie-breaking)
+            postsQuery = postsQuery.sort({ netUpvotes: -1, createdAt: -1 });
+
+            // Pagination based on netUpvotes with createdAt fallback
+            if (pageToken) {	
+                const { netUpvotes, createdAt } = JSON.parse(pageToken);
+				console.log(netUpvotes, createdAt)
+                postsQuery = postsQuery.or([
+                    { netUpvotes: { $lt: netUpvotes } },
+                    { netUpvotes: netUpvotes, createdAt: { $lt: new Date(createdAt) } }
+                ]);
+            }
 		} else {
-			// Default to 'Hot' sorting: by vote count and recency
-			postsQuery = postsQuery.sort({
-				netUpvotes: -1,
-				createdAt: -1, // Secondary sort by recency for ties in vote count
-			});
+			// Default to Hot
+			// Sort by precomputed rankingScore with createdAt as a secondary sort
+            postsQuery = postsQuery.sort({ rankingScore: -1, createdAt: -1 });
+
+            // Pagination based on rankingScore with createdAt fallback
+            if (pageToken) {
+                const { rankingScore, createdAt } = JSON.parse(pageToken);
+                postsQuery = postsQuery.or([
+                    { rankingScore: { $lt: rankingScore } },
+                    { rankingScore: rankingScore, createdAt: { $lt: new Date(createdAt) } }
+                ]);
+            }
 		}
-		// Execute the query and return the posts
+		console.log("LIMIT: ", limit)
+		// Step 4: Apply the limit to the query
+        postsQuery = postsQuery.limit(Number(limit));
+
+		// Step 5: Execute the query and return the posts
 		const posts = await postsQuery.exec();
-		
-		return res.json(posts);
+
+		// Step 6: Generate the next pageToken (if more posts are available)
+		let nextPageToken = null;
+		if (posts.length === Number(limit)) {
+			const lastPost = posts[posts.length - 1];
+            if (view === 'New') {
+                nextPageToken = JSON.stringify({createdAt: lastPost.createdAt.toISOString()});  // Timestamp for 'New'
+            } else if (view === 'Top') {
+                nextPageToken = JSON.stringify({
+                    netUpvotes: lastPost.netUpvotes,
+                    createdAt: lastPost.createdAt.toISOString()
+                });  // Upvotes and timestamp for 'Top'
+            } else if (view === 'Hot') {
+                nextPageToken = JSON.stringify({
+                    rankingScore: lastPost.rankingScore,
+                    createdAt: lastPost.createdAt.toISOString()
+                });  // RankingScore and timestamp for 'Hot'
+            }
+		}
+
+		return res.json({
+			posts,
+			nextPageToken
+		});
 	} catch (errors) {
+		console.log(errors)
 		res.status(400).json(errors);
 	}
 });

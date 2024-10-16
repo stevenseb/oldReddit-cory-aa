@@ -26,6 +26,7 @@ router.post(
 				res.json(comment);
 			}
 		} catch (errors) {
+			console.log(errors)
 			res.status(400).json(errors);
 		}
 	}
@@ -73,6 +74,8 @@ const handleVote = async (req, document, vote) => {
 		});
 		if (req.body.postId) {
 			voteToSave.postId = req.body.postId;
+			//precompute ranking score on votes
+			document.calculateRankingScore();
 		} else {
 			voteToSave.commentId = req.body.commentId;
 		}

@@ -23,7 +23,7 @@ const composeComponents = (...components) => {
 	);
 };
 
-// TODO: Pagination
+// TODO: Debug Pagination
 // TODO: Comments
 // TODO: Fix up styling and frontend mechanics
 // TODO: Refactor into microservices for lambda

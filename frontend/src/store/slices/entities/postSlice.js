@@ -83,10 +83,10 @@ const postSlice = createSlice({
 		builder
 		.addCase(fetchPosts.fulfilled, (state, action) => {
 			console.log(action)
-			action.payload.posts.forEach((post) => {
+			action?.payload?.posts?.forEach((post) => {
 				state[post._id] = post;
-				return state
 			});
+			return state
 		})
 		.addCase(fetchPost.fulfilled, (state, action) => {
 			state[action.payload._id] = action.payload;

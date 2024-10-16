@@ -12,10 +12,14 @@ export const PostIndex = (props) => {
 		filter: { view: "Hot", subRedditId: props.match.params.id },
 		pageToken: null 
 	});
+	
+	const [hasFetched, setHasFetched] = useState(false);
 	const dispatch = useDispatch();
 
 	// Update filter whenever the URL changes
 	useEffect(() => {
+		setHasFetched(false)
+		dispatch(clearPosts())
 		setState((prevState) => ({
 			...prevState,
 			filter: {
@@ -24,16 +28,13 @@ export const PostIndex = (props) => {
 			},
 			pageToken: null
 		}));
-	}, [props.match.params.id]);
+	}, [props.match.params.id, dispatch]);
 
-	const hasFetched = useRef(false);
 	useEffect(() => {
-
 		const fetchPostsWithFilter = async () => {
-			if (hasFetched.current) return;  // Prevent running if already fetching
-			hasFetched.current = true;
+			if (hasFetched) return;  // Prevent running if already fetching
+			setHasFetched(true)
 
-			dispatch(clearPosts())
 			let res = await dispatch(fetchPosts({filter: state.filter, pageToken: state.pageToken}));
 			if (res.type === 'posts/fetchAll/fulfilled') {
 				// Set the new pageToken from the response
@@ -47,11 +48,11 @@ export const PostIndex = (props) => {
 			}
 			// Cleanup if component unmounts while fetching
 			return () => {
-				hasFetched.current = false;
+				setHasFetched(false)
 			};
 		};
 		fetchPostsWithFilter();
-	}, [dispatch, state.filter, hooksReady, state.pageToken]);
+	}, [dispatch, state.filter, hooksReady, state.pageToken, hasFetched]);
 
 	if (!hooksReady) return <div></div>;
 	
@@ -69,7 +70,7 @@ export const PostIndex = (props) => {
 	};
 
 	const loadMorePosts = () => {
-		hasFetched.current = false;
+		setHasFetched(false)
 		if (state.pageToken) {
 			// Trigger the next batch of posts by setting the next pageToken
 			setState(prevState => ({
@@ -82,7 +83,8 @@ export const PostIndex = (props) => {
 
 	// Filter buttons update the filter and reset pageToken to null
 	const handleFilterChange = (newView) => {
-		hasFetched.current = false;
+		setHasFetched(false)
+		dispatch(clearPosts())
 		setState({
 			filter: { view: newView, subRedditId: props.match.params.id },
 			pageToken: null // Reset the pageToken when filter changes

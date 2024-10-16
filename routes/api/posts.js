@@ -25,6 +25,7 @@ router.get('/', async (req, res) => {
 
 		// If no postSubs are found, return an empty array
 		if (!postSubs.length) {
+			console.log(view, subRedditId, pageToken, limit)
 			console.log("No posts found")
 			return res.json([]);
 		}
@@ -40,8 +41,8 @@ router.get('/', async (req, res) => {
             postsQuery = postsQuery.sort({ createdAt: -1 });
             // Pagination based on createdAt timestamp
             if (pageToken) {
-				
-                postsQuery = postsQuery.where('createdAt').lt(new Date(pageToken));
+				const {createdAt} = JSON.parse(pageToken)
+                postsQuery = postsQuery.where('createdAt').lt(new Date(createdAt));
             }
 		} else if (view === 'Top') {
 			 // Sort by netUpvotes with createdAt as a secondary sort (for tie-breaking)
@@ -71,6 +72,7 @@ router.get('/', async (req, res) => {
             }
 		}
 		console.log("LIMIT: ", limit)
+		console.log(view, subRedditId, pageToken, limit)
 		// Step 4: Apply the limit to the query
         postsQuery = postsQuery.limit(Number(limit));
 
@@ -169,8 +171,7 @@ router.post(
 				postId: newPost._id,
 				subId: sub._id
 			})
-			// newPost.subReddits.push(req.body.subId);
-			// sub.posts.push(newPost.id);
+			
 			await Promise.all([newPost.save(), postSub.save()]);
 			res.json(newPost);
 		} catch (errors) {

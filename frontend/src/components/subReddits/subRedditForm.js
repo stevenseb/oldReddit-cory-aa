@@ -46,7 +46,7 @@ export const SubRedditForm = (props) => {
 			desc,
 		};
 		res = await dispatch(createSubReddit(subReddit));
-		if ((res.type = 'receiveSubReddit/fulfilled')) {
+		if ((res.type = 'subReddits/create/fulfilled')) {
 			history.push('/');
 		}
 	};

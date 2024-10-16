@@ -14,8 +14,8 @@ export const PostShow = (props) => {
 	const comments = useSelector((state) =>
 		Object.values(state.entities.comments)
 	);
-
 	const dispatch = useDispatch();
+
 	useEffect(() => {
 		const fetchPostWithComments = async () => {
 			let [postRes, commentsRes] = await Promise.all([
@@ -28,13 +28,11 @@ export const PostShow = (props) => {
             }
 		};
 		
-		if (!post || post?._id != postId) {
-			dispatch(clearComments());
-			fetchPostWithComments();
-		} else {
-			setHooksReady(true)
-		}
-	}, [post, dispatch, postId]);
+		setHooksReady(false)
+		dispatch(clearComments());
+		fetchPostWithComments();
+		
+	}, [dispatch, props.match.params.id]);
 
 	// useEffect(() => {
 	// 	setStatefulComments(comments);

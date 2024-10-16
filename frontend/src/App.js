@@ -23,7 +23,6 @@ const composeComponents = (...components) => {
 	);
 };
 
-// TODO: Debug Pagination
 // TODO: Comments
 // TODO: Fix up styling and frontend mechanics
 // TODO: Refactor into microservices for lambda
@@ -32,6 +31,7 @@ const composeComponents = (...components) => {
 // TODO: Client & Server side caching layers
 // TODO: S3 Bucket for direct image uploads
 // TODO: CDN
+// TODO: Paginate comments
 
 function App() {
 	return (
@@ -51,7 +51,7 @@ function App() {
 					<AuthRoute exact path="/login" component={SessionForm} />
 					<AuthRoute exact path="/signup" component={SessionForm} />
 					<ProtectedRoute exact path="/posts/new" component={PostForm} />
-					{/* <ProtectedRoute exact path="/posts/:id" component={PostShow} /> */}
+					<ProtectedRoute exact path="/posts/:id" component={PostShow} />
 					<ProtectedRoute
 						exact
 						path="/subReddits/new"

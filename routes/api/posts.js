@@ -130,7 +130,8 @@ const _formatComments = (commentList) => {
 
 router.get('/:id', async (req, res) => {
 	try {
-		let post = await Post.findById(req.params.id).lean().populate('comments'); //.populate([
+		//TODO: Add validations to endpoint
+		let post = await Post.findById(req.params.id)//.lean().populate('comments'); //.populate([
 		// 	{
 		// 		path: 'comments',
 		// 		model: 'comments',
@@ -141,7 +142,7 @@ router.get('/:id', async (req, res) => {
 		// 	},
 		// ]);
 
-		post.formattedComments = _formatComments(post.comments);
+		// post.formattedComments = _formatComments(post.comments);
 		res.json(post);
 	} catch (errors) {
 		console.log(errors);

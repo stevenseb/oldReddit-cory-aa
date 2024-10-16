@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchPosts, clearPosts, selectPostArray } from '../../store/slices/entities/postSlice';
 import { PostIndexItem } from './postIndexItem';
@@ -8,28 +8,50 @@ require('./postIndex.css');
 export const PostIndex = (props) => {
 	const [hooksReady, setHooksReady] = useState(false);
 	const posts = useSelector(selectPostArray); // Use the memoized selector
-	const [filter, setFilter] = useState({view: "Hot", subRedditId: props.match.params.id}); // Default filter is "Hot"
+	const [state, setState] = useState({ 
+		filter: { view: "Hot", subRedditId: props.match.params.id },
+		pageToken: null 
+	});
 	const dispatch = useDispatch();
 
 	// Update filter whenever the URL changes
 	useEffect(() => {
-		setFilter((prevFilter) => ({
-			...prevFilter,
-			subRedditId: props.match.params.id, // Update subRedditId based on URL
+		setState((prevState) => ({
+			...prevState,
+			filter: {
+				...prevState.filter,
+				subRedditId: props.match.params.id, // Update subRedditId based on URL
+			},
+			pageToken: null
 		}));
 	}, [props.match.params.id]);
 
+	const hasFetched = useRef(false);
 	useEffect(() => {
+
 		const fetchPostsWithFilter = async () => {
+			if (hasFetched.current) return;  // Prevent running if already fetching
+			hasFetched.current = true;
+
 			dispatch(clearPosts())
-			let res = await dispatch(fetchPosts(filter));
+			let res = await dispatch(fetchPosts({filter: state.filter, pageToken: state.pageToken}));
 			if (res.type === 'posts/fetchAll/fulfilled') {
-				// setPosts(Object.values(res.payload));
+				// Set the new pageToken from the response
+            if (res.payload.nextPageToken) {
+                setState(prevState => ({
+						...prevState,
+						pageToken: JSON.parse(res.payload.nextPageToken)
+					}));
+            }
 				setHooksReady(true);
 			}
+			// Cleanup if component unmounts while fetching
+			return () => {
+				hasFetched.current = false;
+			};
 		};
 		fetchPostsWithFilter();
-	}, [dispatch, filter]);
+	}, [dispatch, state.filter, hooksReady, state.pageToken]);
 
 	if (!hooksReady) return <div></div>;
 	
@@ -45,15 +67,38 @@ export const PostIndex = (props) => {
 			</ul>
 		);
 	};
+
+	const loadMorePosts = () => {
+		hasFetched.current = false;
+		if (state.pageToken) {
+			// Trigger the next batch of posts by setting the next pageToken
+			setState(prevState => ({
+				...prevState,
+				pageToken: prevState.pageToken
+			}));
+
+		}
+	};
+
+	// Filter buttons update the filter and reset pageToken to null
+	const handleFilterChange = (newView) => {
+		hasFetched.current = false;
+		setState({
+			filter: { view: newView, subRedditId: props.match.params.id },
+			pageToken: null // Reset the pageToken when filter changes
+		});
+	};
+	console.log(state)
 	return (
 		<div>
 			{/* Filter buttons */}
 			<div className="post-filters">
-				<button onClick={() => setFilter({view: "Hot", subRedditId: props.match.params.id})}>Hot</button>
-				<button onClick={() => setFilter({view: "New", subRedditId: props.match.params.id})}>New</button>
-				<button onClick={() => setFilter({view: "Top", subRedditId: props.match.params.id})}>Top</button>
+				<button onClick={() => handleFilterChange("Hot")}>Hot</button>
+				<button onClick={() => handleFilterChange("New")}>New</button>
+				<button onClick={() => handleFilterChange("Top")}>Top</button>
 			</div>
 			{renderPosts()}
+			<button onClick={loadMorePosts}>Load More</button>
 		</div>
 	);
 };

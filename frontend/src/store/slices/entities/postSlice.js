@@ -12,9 +12,9 @@ export const selectPostArray = createSelector(
 
 export const fetchPosts = createAsyncThunk(
 	'posts/fetchAll',
-	async (filters, { rejectWithValue }) => {
+	async ({filter, pageToken}, { rejectWithValue }) => {
 		try {
-			let res = await axios.get('/api/posts', {params: {filters}});
+			let res = await axios.get('/api/posts', { params: { filters: filter, pageToken: pageToken}});
 			return res.data;
 		} catch (err) {
 			return rejectWithValue(err.response.data);
@@ -82,8 +82,9 @@ const postSlice = createSlice({
 	extraReducers: (builder) => {
 		builder
 		.addCase(fetchPosts.fulfilled, (state, action) => {
-			action.payload.forEach((subReddit) => {
-				state[subReddit._id] = subReddit;
+			console.log(action)
+			action.payload.posts.forEach((post) => {
+				state[post._id] = post;
 				return state
 			});
 		})

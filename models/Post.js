@@ -18,6 +18,10 @@ const PostSchema = new Schema(
 		body: {
 			type: String,
 		},
+		rankingScore: {
+			type: Number,
+			default: 0,
+		},
 		netUpvotes: {
 			type: Number,
 			default: 0,
@@ -25,5 +29,20 @@ const PostSchema = new Schema(
 	},
 	{ timestamps: true }
 );
+
+// Instance method to calculate the rankingScore with an incoming vote
+PostSchema.methods.calculateRankingScore = function() {
+    const G = 1.8; // The decay factor (adjust as needed)
+
+    // Get the number of hours since the post was created
+    const now = new Date();
+    const postAgeInMilliseconds = now - this.createdAt;
+    const postAgeInHours = postAgeInMilliseconds / (1000 * 60 * 60); // Convert ms to hours
+    // Calculate the rankingScore using the netUpvotes
+    const rankingScore = this.netUpvotes / Math.pow((postAgeInHours + 2), G);
+
+    this.rankingScore = rankingScore;
+};
+
 
 module.exports = Post = mongoose.model('posts', PostSchema);

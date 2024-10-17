@@ -74,12 +74,12 @@ const handleVote = async (req, document, vote) => {
 		});
 		if (req.body.postId) {
 			voteToSave.postId = req.body.postId;
-			//precompute ranking score on votes
-			document.calculateRankingScore();
-		} else {
+		} else if (req.body.commentId) {
 			voteToSave.commentId = req.body.commentId;
 		}
 		document.netUpvotes += req.body.value;
+		//precompute ranking score on votes
+		document.calculateRankingScore();
 	}
 
 	// Save the updated vote and the document

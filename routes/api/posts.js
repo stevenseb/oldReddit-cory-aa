@@ -12,8 +12,8 @@ module.exports = router;
 
 router.get('/', async (req, res) => {
 	try {
-		const { view, subRedditId } = JSON.parse(req.query?.filters);
-		const { limit = 10, pageToken } = req.query;
+		const { view = "Hot", subRedditId } = JSON.parse(req.query?.filters);
+		const { limit = 10, pageToken = null } = req.query;
 		
 		// Ensure subRedditId is provided
 		if (!subRedditId) {
@@ -25,7 +25,6 @@ router.get('/', async (req, res) => {
 
 		// If no postSubs are found, return an empty array
 		if (!postSubs.length) {
-			console.log(view, subRedditId, pageToken, limit)
 			console.log("No posts found")
 			return res.json([]);
 		}
@@ -71,8 +70,6 @@ router.get('/', async (req, res) => {
                 ]);
             }
 		}
-		console.log("LIMIT: ", limit)
-		console.log(view, subRedditId, pageToken, limit)
 		// Step 4: Apply the limit to the query
         postsQuery = postsQuery.limit(Number(limit));
 

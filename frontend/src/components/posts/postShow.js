@@ -42,7 +42,7 @@ export const PostShow = (props) => {
 			<ul>
 				{comments.map((comment, idx) => (
 					<div className="comment-container" key={`comment${idx}`}>
-						<VoteButton commentId={comment._id} voteCount={comment.voteCount} />
+						<VoteButton commentId={comment._id} netUpvotes={comment.netUpvotes} />
 						<CommentIndexItem comment={comment} />
 					</div>
 				))}

@@ -23,15 +23,18 @@ const composeComponents = (...components) => {
 	);
 };
 
-// TODO: Comments
+// TODO: Comments pagination and rendering
 // TODO: Fix up styling and frontend mechanics
 // TODO: Refactor into microservices for lambda
 // TODO: Swap out MongoDB for DynamoDB
 // TODO: Set up Load Balancers
 // TODO: Client & Server side caching layers
+// TODO: Caching of pagetokens so you can keep your spot
+// TODO: Archiving old pages
+// TODO: Update pageranks with a cron job or something
 // TODO: S3 Bucket for direct image uploads
 // TODO: CDN
-// TODO: Paginate comments
+// TODO: Add filter for time on TOP
 
 function App() {
 	return (

@@ -41,18 +41,18 @@ const handleVoteOnPost = async (req) => {
 };
 
 const handleVoteOnComment = async (req) => {
-	const [comment, votes] = await Promise.all([
+	const [comment, vote] = await Promise.all([
 		Comment.findById(req.body.commentId),
-		Vote.find({ commentId: req.body.commentId }),
+		Vote.findOne({ commentId: req.body.commentId, userId: req.user.id }),
 	]);
-	return handleVote(req, comment, votes);
+	return handleVote(req, comment, vote);
 };
 
 const handleVote = async (req, document, vote) => {
 	let voteToSave;
 	
 	// Check if the user has already voted
-	if (vote?.userId.toString() == req?.user?._id.toString()) {
+	if (vote?.userId?.toString() == req?.user?._id.toString()) {
 		// If the user is trying to vote the same value again, we don't allow double voting
 		if (vote.value === req.body.value) {
 			// Reset the vote and subtract the original vote value from netUpvotes

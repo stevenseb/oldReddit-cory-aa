@@ -26,6 +26,7 @@ const composeComponents = (...components) => {
 // TODO: Comments pagination, ranking, and rendering
 // TODO: Fix up styling and frontend mechanics
 // TODO: Deploy on render
+// TODO: Update resume and start applying
 // TODO: Refactor into microservices for lambda
 // TODO: Swap out MongoDB for DynamoDB
 // TODO: Set up Load Balancers

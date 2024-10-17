@@ -9,9 +9,58 @@ module.exports = router;
 
 router.get('/', async (req, res) => {
 	try {
-		let comments = await Comment.find({ postId: req.query.postId });
-		res.json(comments);
+		// Parse the filters from the query
+		const { postId, view = 'Hot' } = JSON.parse(req.query?.filters);
+		const { limit = 10, pageToken = null } = req.query;
+
+		// Initialize query and sorting
+		let query = { postId };
+		let sortOption = {};
+
+		if (view === 'Hot') {
+			sortOption = { rankingScore: -1, createdAt: -1 };
+			if (pageToken) {
+				const { createdAt } = JSON.parse(pageToken);
+				query.createdAt = { $lt: new Date(createdAt) }; // Get posts older than pageToken
+			}
+		} else if (view === 'New') {
+			sortOption = { createdAt: -1 };
+			if (pageToken) {
+				const { createdAt } = JSON.parse(pageToken);
+				query.createdAt = { $lt: new Date(createdAt) }; // Get posts older than pageToken
+			}
+		} else if (view === 'Top') {
+			sortOption = { netUpvotes: -1, createdAt: -1 };
+      if (pageToken) {
+				const { netUpvotes, createdAt } = JSON.parse(pageToken);
+				query.$or = [
+				{ netUpvotes: { $lt: netUpvotes } }, // Get posts with fewer upvotes
+				{ netUpvotes, createdAt: { $lt: new Date(createdAt) } } // If equal upvotes, fetch older ones
+				];
+			}
+		}
+		// Find comments based on the query with sorting and pagination
+		const comments = await Comment.find(query)
+		.sort(sortOption)
+		.limit(parseInt(limit));
+
+		// Prepare the nextPageToken for pagination
+		let nextPageToken = null;
+		if (comments.length === limit) {
+			const lastComment = comments[comments.length - 1];
+			nextPageToken = JSON.stringify({
+				createdAt: lastComment.createdAt,
+				...(view === 'Top' && { netUpvotes: lastComment.netUpvotes }), // Include netUpvotes for Top view
+			});
+		}
+
+		// Return comments with nextPageToken for pagination
+		res.json({
+			comments,
+			nextPageToken,
+		});	
 	} catch (err) {
+		console.log(err)
 		res.status(404).json({ noCommentsFound: 'No comments yet' });
 	}
 });

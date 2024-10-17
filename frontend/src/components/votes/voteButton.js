@@ -5,7 +5,7 @@ import { useDispatch } from 'react-redux';
 export const VoteButton = (props) => {
 	const dispatch = useDispatch();
 	const [voteCount, setVoteCount] = useState(props.netUpvotes);
-	console.log(props)
+	
 	const handleVote = async (e) => {
 		e.preventDefault();
 		let vote;

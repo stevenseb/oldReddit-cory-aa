@@ -1,12 +1,21 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { fetchPost } from './postSlice';
+import { createSelector } from 'reselect';
+
+const selectComments = (state) => state.entities.comments;
+
+export const selectCommentsArray = createSelector(
+	[selectComments],
+	(comments) => (comments ? Object.values(comments) : [])
+);
 
 export const fetchComments = createAsyncThunk(
 	'comments/fetchAll',
-	async (postId, { rejectWithValue }) => {
+	async ({filter, pageToken}, { rejectWithValue }) => {
+		console.log(filter, pageToken)
 		try {
-			let res = await axios.get('/api/comments', {params: {postId}});
+			let res = await axios.get('/api/comments', { params: { filters: filter, pageToken: pageToken}});
 			return res.data;
 		} catch (err) {
 			return rejectWithValue(err.response.data);
@@ -50,9 +59,11 @@ const commentSlice = createSlice({
 	extraReducers: (builder) => {
 		builder
 		.addCase(fetchComments.fulfilled, (state, action) => {
-			action.payload.forEach((comment) => {
+			console.log(action)
+			action?.payload?.comments?.forEach((comment) => {
 				state[comment._id] = comment;
 			});
+			return state
 		})
 		.addCase(createComment.fulfilled, (state, action) => {
 			if (!action.payload.parentCommentId) {
@@ -82,12 +93,12 @@ const commentSlice = createSlice({
 		.addCase(deleteComment.fulfilled, (state, action) => {
 			state[action.payload._id] = action.payload;
 		})
-		.addCase(fetchPost.fulfilled, (state, action) => {
-			action.payload.formattedComments &&
-			action.payload.formattedComments.forEach((comment) => {
-				state[comment._id] = comment;
-			});
-		});
+		// .addCase(fetchPost.fulfilled, (state, action) => {
+		// 	action.payload.formattedComments &&
+		// 	action.payload.formattedComments.forEach((comment) => {
+		// 		state[comment._id] = comment;
+		// 	});
+		// });
 	},
 });
 

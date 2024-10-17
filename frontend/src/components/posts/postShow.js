@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { fetchPost } from '../../store/slices/entities/postSlice';
-import { CommentIndexItem } from '../comments/commentIndexItem';
+import { CommentIndex } from '../comments/commentIndex';
 import { CommentForm } from '../comments/commentForm';
 import { VoteButton } from '../votes/voteButton';
 import { useSelector } from 'react-redux';
@@ -11,55 +11,32 @@ export const PostShow = (props) => {
 	let postId = props.match.params.id;
 	const [hooksReady, setHooksReady] = useState(false);
 	const post = useSelector(state => state?.entities?.posts[props?.match?.params?.id]);
-	const comments = useSelector((state) =>
-		Object.values(state.entities.comments)
-	);
+	
 	const dispatch = useDispatch();
 
 	useEffect(() => {
-		const fetchPostWithComments = async () => {
-			let [postRes, commentsRes] = await Promise.all([
-				dispatch(fetchPost(postId)),
-				dispatch(fetchComments(postId))
-			])
-
-			if (postRes.type === 'posts/fetchOne/fulfilled' && commentsRes.type === 'comments/fetchAll/fulfilled') {
-                setHooksReady(true);  // Set hooks ready if both fetches are successful
+		const fetchOnePost = async () => {
+			let postRes = await dispatch(fetchPost(postId));	
+			if (postRes.type === 'posts/fetchOne/fulfilled') {
+                setHooksReady(true); 
             }
 		};
 		
 		setHooksReady(false)
 		dispatch(clearComments());
-		fetchPostWithComments();
+		fetchOnePost();
 		
 	}, [dispatch, props.match.params.id]);
 
-	// useEffect(() => {
-	// 	setStatefulComments(comments);
-	// }, []);
-	const renderComments = () => {
-		return (
-			<ul>
-				{comments.map((comment, idx) => (
-					<div className="comment-container" key={`comment${idx}`}>
-						<VoteButton commentId={comment._id} netUpvotes={comment.netUpvotes} />
-						<CommentIndexItem comment={comment} />
-					</div>
-				))}
-			</ul>
-		);
-	};
-
-	if (!hooksReady) return <div></div>;
+	if (!hooksReady) return <div>Loading...</div>;
 
 	return (
 		<div>
-			<VoteButton postId={post._id} voteCount={post.voteCount} />
-			<span>{post.netUpvotes}</span>
+			<VoteButton postId={post._id} netUpvotes={post.netUpvotes} />
 			<h1>{post.title}</h1>
 			<h2>{post.body}</h2>
 			<CommentForm postId={post._id} />
-			{renderComments()}
+			<CommentIndex postId={post._id}/>
 		</div>
 	);
 };

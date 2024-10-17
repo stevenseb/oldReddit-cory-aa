@@ -7,60 +7,75 @@ const router = express.Router();
 
 module.exports = router;
 
+// Helper function to parse query filters
+const parseFilters = (query) => {
+	const { postId, view = 'Hot' } = JSON.parse(query?.filters || '{}');
+	const { limit = 10, pageToken = null } = query;
+	return { postId, view, limit, pageToken };
+};
+
+// Helper function to build the query and sort options based on the view
+const buildQueryAndSort = (postId, view, pageToken) => {
+	let query = { postId };
+	let sortOption = {};
+
+	if (view === 'Hot' || view === 'New') {
+		sortOption = { createdAt: -1 };
+		if (view === 'Hot') {
+			sortOption = { rankingScore: -1, ...sortOption };
+		}
+		if (pageToken) {
+			const { createdAt } = JSON.parse(pageToken);
+			query.createdAt = { $lt: new Date(createdAt) };
+		}
+	} else if (view === 'Top') {
+		sortOption = { netUpvotes: -1, createdAt: -1 };
+		if (pageToken) {
+			const { netUpvotes, createdAt } = JSON.parse(pageToken);
+			query.$or = [
+				{ netUpvotes: { $lt: netUpvotes } },
+				{ netUpvotes, createdAt: { $lt: new Date(createdAt) } }
+			];
+		}
+	}
+
+	return { query, sortOption };
+};
+
+// Helper function to generate the nextPageToken for pagination
+const generateNextPageToken = (comments, limit, view) => {
+	if (comments.length < limit) return null;
+
+	const lastComment = comments[comments.length - 1];
+	const tokenData = { createdAt: lastComment.createdAt };
+
+	if (view === 'Top') {
+		tokenData.netUpvotes = lastComment.netUpvotes;
+	}
+
+	return JSON.stringify(tokenData);
+};
+
+// Main route handler
 router.get('/', async (req, res) => {
 	try {
-		// Parse the filters from the query
-		const { postId, view = 'Hot' } = JSON.parse(req.query?.filters);
-		const { limit = 10, pageToken = null } = req.query;
+		// Parse filters and pagination options
+		const { postId, view, limit, pageToken } = parseFilters(req.query);
 
-		// Initialize query and sorting
-		let query = { postId };
-		let sortOption = {};
+		// Build query and sort options based on the view and pageToken
+		const { query, sortOption } = buildQueryAndSort(postId, view, pageToken);
 
-		if (view === 'Hot') {
-			sortOption = { rankingScore: -1, createdAt: -1 };
-			if (pageToken) {
-				const { createdAt } = JSON.parse(pageToken);
-				query.createdAt = { $lt: new Date(createdAt) }; // Get posts older than pageToken
-			}
-		} else if (view === 'New') {
-			sortOption = { createdAt: -1 };
-			if (pageToken) {
-				const { createdAt } = JSON.parse(pageToken);
-				query.createdAt = { $lt: new Date(createdAt) }; // Get posts older than pageToken
-			}
-		} else if (view === 'Top') {
-			sortOption = { netUpvotes: -1, createdAt: -1 };
-      if (pageToken) {
-				const { netUpvotes, createdAt } = JSON.parse(pageToken);
-				query.$or = [
-				{ netUpvotes: { $lt: netUpvotes } }, // Get posts with fewer upvotes
-				{ netUpvotes, createdAt: { $lt: new Date(createdAt) } } // If equal upvotes, fetch older ones
-				];
-			}
-		}
-		// Find comments based on the query with sorting and pagination
-		const comments = await Comment.find(query)
-		.sort(sortOption)
-		.limit(parseInt(limit));
+		// Find comments with the given query, sorting, and limit
+		const comments = await Comment.find(query).sort(sortOption).limit(parseInt(limit));
 
-		// Prepare the nextPageToken for pagination
-		let nextPageToken = null;
-		if (comments.length === limit) {
-			const lastComment = comments[comments.length - 1];
-			nextPageToken = JSON.stringify({
-				createdAt: lastComment.createdAt,
-				...(view === 'Top' && { netUpvotes: lastComment.netUpvotes }), // Include netUpvotes for Top view
-			});
-		}
+		// Generate the nextPageToken for pagination
+		const nextPageToken = generateNextPageToken(comments, limit, view);
 
-		// Return comments with nextPageToken for pagination
-		res.json({
-			comments,
-			nextPageToken,
-		});	
+		// Return the comments and pagination token
+		res.json({ comments, nextPageToken });
+
 	} catch (err) {
-		console.log(err)
+		console.error(err);
 		res.status(404).json({ noCommentsFound: 'No comments yet' });
 	}
 });

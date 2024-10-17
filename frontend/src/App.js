@@ -23,7 +23,7 @@ const composeComponents = (...components) => {
 	);
 };
 
-// TODO: Comments pagination, ranking, and rendering
+// TODO: Comments rendering
 // TODO: Fix up styling and frontend mechanics
 // TODO: Deploy on render
 // TODO: Update resume and start applying

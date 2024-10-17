@@ -13,7 +13,7 @@ export const CommentIndexItem = ({ comment }) => {
 	// };
 
 	const renderChildComments = () => (
-		<ul className="sub-reddit-container">
+		<ul>
 			{comment.children &&
 				comment.children.map((comment, idx) => (
 					<CommentIndexItem key={`com${idx}`} comment={comment} />

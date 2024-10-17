@@ -12,7 +12,6 @@ export const PostIndexItem = ({ post }) => {
 	};
 	return (
 		<li>
-			<span>{post.netUpvotes}</span>
 			<h1>
 				<Link to={`/posts/${post._id}`}>{post.title}</Link>
 				{/* <button onClick={handleDelete}>Delete</button> */}

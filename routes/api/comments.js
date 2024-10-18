@@ -19,17 +19,20 @@ const buildQueryAndSort = (postId, view, pageToken) => {
 	let query = { postId, parentCommentId: null }; // Fetch only top-level comments
 	let sortOption = {};
 
-	if (view === 'Hot' || view === 'New') {
-		sortOption = { createdAt: -1 };
-		if (view === 'Hot') {
-			sortOption = { rankingScore: -1, ...sortOption };
-		}
+	if (view === 'Hot') {
+		sortOption = { rankingScore: -1, ...sortOption };
 		if (pageToken) {
 			const { rankingScore, createdAt } = JSON.parse(pageToken);
 			query.$or = [
 				{ rankingScore: {$lt: rankingScore} },
 				{ rankingScore, createdAt: {$lt: new Date(createdAt)} }
 			];
+		}
+	} else if(view === "New") {
+		sortOption = { createdAt: -1 };
+		if (pageToken) {
+			const { createdAt } = JSON.parse(pageToken);
+			query.createdAt =  {$lt: new Date(createdAt)} 
 		}
 	} else if (view === 'Top') {
 		sortOption = { netUpvotes: -1, createdAt: -1 };

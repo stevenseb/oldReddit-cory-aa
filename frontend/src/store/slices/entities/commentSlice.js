@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
-import { fetchPost } from './postSlice';
 import { createSelector } from 'reselect';
 
 const selectComments = (state) => state.entities.comments;
@@ -73,16 +72,16 @@ const commentSlice = createSlice({
 					for (let i = 0; i < arr.length; i++) {
 						let obj = arr[i];
 						if (obj._id === action.payload.parentCommentId) {
-							(obj.children = obj.children || []).push(action.payload);
+							(obj.replies = obj.replies || []).push(action.payload);
 							return;
 						}
-						if (!obj.children) continue;
-						for (let j = 0; j < obj.children.length; j++) {
-							let child = obj.children[j];
+						if (!obj.replies) continue;
+						for (let j = 0; j < obj.replies.length; j++) {
+							let child = obj.replies[j];
 							if (child._id === action.payload.parentCommentId) {
-								return (child.children = child.children || []).push(action.payload);
+								return (child.replies = child.replies || []).push(action.payload);
 							} else {
-								if (child.children) return _recursiveInsert(child.children);
+								if (child.replies) return _recursiveInsert(child.replies);
 							}
 						}
 					}
@@ -93,12 +92,6 @@ const commentSlice = createSlice({
 		.addCase(deleteComment.fulfilled, (state, action) => {
 			state[action.payload._id] = action.payload;
 		})
-		// .addCase(fetchPost.fulfilled, (state, action) => {
-		// 	action.payload.formattedComments &&
-		// 	action.payload.formattedComments.forEach((comment) => {
-		// 		state[comment._id] = comment;
-		// 	});
-		// });
 	},
 });
 

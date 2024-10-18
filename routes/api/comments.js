@@ -103,6 +103,21 @@ router.get('/', async (req, res) => {
 	}
 });
 
+router.get('/:commentId/replies', async (req, res) => {
+	try {
+		const { limit = 10, pageToken = null } = req.query;
+		const { commentId } = req.params;
+
+		// Fetch replies for the specified comment with pagination
+		const { replies, nextPageToken } = await fetchReplies(commentId, limit, pageToken);
+
+		res.json({ replies, nextPageToken });
+	} catch (err) {
+		console.error(err);
+		res.status(404).json({ noRepliesFound: 'No replies yet' });
+	}
+});
+
 router.post(
 	'/',
 	passport.authenticate('jwt', { session: false }),

@@ -25,8 +25,11 @@ const buildQueryAndSort = (postId, view, pageToken) => {
 			sortOption = { rankingScore: -1, ...sortOption };
 		}
 		if (pageToken) {
-			const { createdAt } = JSON.parse(pageToken);
-			query.createdAt = { $lt: new Date(createdAt) };
+			const { rankingScore, createdAt } = JSON.parse(pageToken);
+			query.$or = [
+				{ rankingScore: {$lt: rankingScore} },
+				{ rankingScore, createdAt: {$lt: new Date(createdAt)} }
+			];
 		}
 	} else if (view === 'Top') {
 		sortOption = { netUpvotes: -1, createdAt: -1 };
@@ -51,7 +54,7 @@ const generateNextPageToken = (items, limit, view) => {
 
 	if (view === 'Top' && lastItem.netUpvotes) {
 		tokenData.netUpvotes = lastItem.netUpvotes;
-	} else if (view === 'Replies') {
+	} else if (view === 'Replies' || view === 'Hot') {
 		tokenData.rankingScore = lastItem.rankingScore
 	}
 

@@ -51,25 +51,39 @@ const generateNextPageToken = (items, limit, view) => {
 
 	if (view === 'Top' && lastItem.netUpvotes) {
 		tokenData.netUpvotes = lastItem.netUpvotes;
+	} else if (view === 'Replies') {
+		tokenData.rankingScore = lastItem.rankingScore
 	}
 
 	return JSON.stringify(tokenData);
 };
 
 // Helper function to fetch replies with pagination
-const fetchReplies = async (parentCommentId, limit, pageToken) => {
+const fetchReplies = async (parentCommentId, limit, pageToken, repliesOnly) => {
 	let query = { parentCommentId };
-	let sortOption = { createdAt: 1 }; // Replies sorted by creation time
+	let sortOption = { rankingScore: -1, createdAt: -1 }; // Replies sorted by ranking and creation time
 
 	// Handle pagination for replies
 	if (pageToken) {
-		const { createdAt } = JSON.parse(pageToken);
-		query.createdAt = { $lt: new Date(createdAt) };
+	// const { rankingScore, createdAt } = JSON.parse(pageToken);
+	// postsQuery = postsQuery.or([
+	// 	{ rankingScore: { $lt: rankingScore } },
+	// 	{ rankingScore: rankingScore, createdAt: { $lt: new Date(createdAt) } }
+	// ]);
+		const { rankingScore, createdAt } = JSON.parse(pageToken);
+		console.log("pagerank: ",rankingScore)
+		query.$or = [
+			{ rankingScore: { $lt: rankingScore } },
+			{ rankingScore: rankingScore, createdAt: { $lt: new Date(createdAt) } }
+		]
+			
 	}
 
 	const replies = await Comment.find(query).sort(sortOption).limit(parseInt(limit));
 
 	const nextPageToken = generateNextPageToken(replies, limit, 'Replies');
+
+	console.log(replies)
 
 	return { replies, nextPageToken };
 };
@@ -109,7 +123,7 @@ router.get('/:commentId/replies', async (req, res) => {
 		const { commentId } = req.params;
 
 		// Fetch replies for the specified comment with pagination
-		const { replies, nextPageToken } = await fetchReplies(commentId, limit, pageToken);
+		const { replies, nextPageToken } = await fetchReplies(commentId, limit, pageToken, 'Replies');
 
 		res.json({ replies, nextPageToken });
 	} catch (err) {

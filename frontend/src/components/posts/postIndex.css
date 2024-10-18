@@ -5,4 +5,15 @@
 
 .post-container {
 	display: flex;
+	position: relative;
+	padding-left: 25px;
+}
+
+.rank {
+	color: #c6c6c6;
+	font-size: medium;
+	font-family: arial;
+	font-weight: bold;
+	position: absolute;
+	left: -5px;
 }

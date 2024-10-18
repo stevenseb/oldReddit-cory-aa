@@ -3,8 +3,6 @@ import './App.css';
 import { BrowserRouter, Switch, Route } from 'react-router-dom';
 import { SessionForm } from './components/session/sessionForm';
 import { AuthRoute, ProtectedRoute } from './util/routeUtil';
-import { PlaceHolder } from './components/placeholder';
-import { SubRedditShow } from './components/subReddits/subRedditShow';
 import { Header } from './components/header/header';
 import { SubRedditIndex } from './components/subReddits/subRedditIndex';
 import { SubRedditForm } from './components/subReddits/subRedditForm';
@@ -23,8 +21,8 @@ const composeComponents = (...components) => {
 	);
 };
 
-// TODO: Comments rendering
 // TODO: Fix up styling and frontend mechanics
+// TODO: DELETE unused components
 // TODO: Deploy on render
 // TODO: Update resume and start applying
 // TODO: Refactor into microservices for lambda
@@ -36,16 +34,19 @@ const composeComponents = (...components) => {
 // TODO: Update pageranks with a cron job or something
 // TODO: S3 Bucket for direct image uploads
 // TODO: CDN
+// TODO: Implement subscriptions to subreddits
 // TODO: Add filter for time on TOP
+// TODO: User Profiles
 
 function App() {
 	return (
 		<div className="App">
 			<BrowserRouter>
+				<SubRedditIndex />
+				
 				<header className="App-header">
 					<Header />
 				</header>
-				<SubRedditIndex />
 
 				<Switch>
 					{/* <Route

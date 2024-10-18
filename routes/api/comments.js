@@ -16,7 +16,7 @@ const parseFilters = (query) => {
 
 // Helper function to build the query and sort options based on the view
 const buildQueryAndSort = (postId, view, pageToken) => {
-	let query = { postId };
+	let query = { postId, parentCommentId: null }; // Fetch only top-level comments
 	let sortOption = {};
 
 	if (view === 'Hot' || view === 'New') {
@@ -43,36 +43,59 @@ const buildQueryAndSort = (postId, view, pageToken) => {
 };
 
 // Helper function to generate the nextPageToken for pagination
-const generateNextPageToken = (comments, limit, view) => {
-	if (comments.length < limit) return null;
+const generateNextPageToken = (items, limit, view) => {
+	if (items.length < limit) return null;
 
-	const lastComment = comments[comments.length - 1];
-	const tokenData = { createdAt: lastComment.createdAt };
+	const lastItem = items[items.length - 1];
+	const tokenData = { createdAt: lastItem.createdAt };
 
-	if (view === 'Top') {
-		tokenData.netUpvotes = lastComment.netUpvotes;
+	if (view === 'Top' && lastItem.netUpvotes) {
+		tokenData.netUpvotes = lastItem.netUpvotes;
 	}
 
 	return JSON.stringify(tokenData);
 };
 
-// Main route handler
+// Helper function to fetch replies with pagination
+const fetchReplies = async (parentCommentId, limit, pageToken) => {
+	let query = { parentCommentId };
+	let sortOption = { createdAt: 1 }; // Replies sorted by creation time
+
+	// Handle pagination for replies
+	if (pageToken) {
+		const { createdAt } = JSON.parse(pageToken);
+		query.createdAt = { $lt: new Date(createdAt) };
+	}
+
+	const replies = await Comment.find(query).sort(sortOption).limit(parseInt(limit));
+
+	const nextPageToken = generateNextPageToken(replies, limit, 'Replies');
+
+	return { replies, nextPageToken };
+};
+
 router.get('/', async (req, res) => {
 	try {
-		// Parse filters and pagination options
+		
 		const { postId, view, limit, pageToken } = parseFilters(req.query);
 
-		// Build query and sort options based on the view and pageToken
 		const { query, sortOption } = buildQueryAndSort(postId, view, pageToken);
 
-		// Find comments with the given query, sorting, and limit
-		const comments = await Comment.find(query).sort(sortOption).limit(parseInt(limit));
+		const topLevelComments = await Comment.find(query).sort(sortOption).limit(parseInt(limit)).lean();
 
-		// Generate the nextPageToken for pagination
-		const nextPageToken = generateNextPageToken(comments, limit, view);
+		// Limit replies per top-level comment
+		const replyLimit = 5;
 
-		// Return the comments and pagination token
-		res.json({ comments, nextPageToken });
+		// Fetch replies for each top-level comment with pagination
+		for (const comment of topLevelComments) {
+			const { replies, nextPageToken: replyPageToken } = await fetchReplies(comment._id, replyLimit, null);
+			comment.replies = replies; 
+			comment.replyNextPageToken = replyPageToken; // Attach pagination token for replies
+		}
+
+		const nextPageToken = generateNextPageToken(topLevelComments, limit, view);
+
+		res.json({ comments: topLevelComments, nextPageToken });
 
 	} catch (err) {
 		console.error(err);

@@ -17,6 +17,7 @@ export const PostIndex = (props) => {
 			entityName="posts"
 			renderItem={(post, idx) => (
 				<div className="post-container" key={`post${idx}`}>
+					<span className="rank">{idx+1}</span>
 					<VoteButton postId={post._id} netUpvotes={post.netUpvotes} />
 					<PostIndexItem post={post} />
 				</div>

@@ -1,0 +1,36 @@
+.filter-container {
+    position: relative;
+    margin-left: 25px;
+    margin-top: 5px;
+}
+.filters {
+    position: absolute;
+    top: -25px;
+    left: 100px
+}
+/* Style for filter buttons when rendering posts */
+.post-filter-button {
+    background-color: #eff7ff;
+    color: #369;
+    border: 1px solid rgb(106, 153, 203);;
+    padding-left: 2px;
+    padding-right: 2px;
+    margin-right: 5px;
+    cursor: pointer;
+}
+
+/* Style for filter buttons when rendering comments */
+.comment-filter-button {
+    background-color: #0066ff;
+    color: white;
+    border: none;
+    padding: 10px;
+    margin-right: 5px;
+    cursor: pointer;
+}
+
+/* Add any common styles for both buttons */
+button {
+    font-size: 16px;
+    border-radius: 4px;
+}

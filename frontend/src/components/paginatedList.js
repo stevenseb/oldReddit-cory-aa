@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+require('./paginatedList.css')
 
 const PaginatedList = ({ fetchAction, clearAction, selectData, renderItem, initialFilter, entityName }) => {
     const [state, setState] = useState({
@@ -72,17 +73,23 @@ const PaginatedList = ({ fetchAction, clearAction, selectData, renderItem, initi
 		});
 	};
 
+     // Conditional class for button styling based on entity type
+	const getButtonClass = () => {
+		return entityName === 'posts' ? 'post-filter-button' : 'comment-filter-button';
+	};
+
     // Render list
 	return (
-		<div>
+		<div className='filter-container'>
 			{/* Filter buttons */}
 			<div className="filters">
-				<button onClick={() => handleFilterChange("Hot")}>Hot</button>
-				<button onClick={() => handleFilterChange("New")}>New</button>
-				<button onClick={() => handleFilterChange("Top")}>Top</button>
+				<button className={getButtonClass()} onClick={() => handleFilterChange("Hot")}>Hot</button>
+				<button className={getButtonClass()} onClick={() => handleFilterChange("New")}>New</button>
+				<button className={getButtonClass()} onClick={() => handleFilterChange("Top")}>Top</button>
 			</div>
 			{/* Render the items */}
-			<ul>{items.map((item, idx) => renderItem(item, idx))}</ul>
+            
+			<ul className={entityName.concat("-list")}>{items.map((item, idx) => renderItem(item, idx))}</ul>
 			<button onClick={loadMore}>Load More</button>
 		</div>
 	);

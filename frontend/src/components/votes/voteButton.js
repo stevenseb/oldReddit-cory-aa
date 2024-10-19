@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { createVote } from '../../store/slices/entities/votes';
 import { useDispatch } from 'react-redux';
+require('./voteButton.css')
 
 export const VoteButton = (props) => {
 	const dispatch = useDispatch();
@@ -24,7 +25,7 @@ export const VoteButton = (props) => {
 	};
 
 	return (
-		<div onClick={handleVote}>
+		<div className='vote-button' onClick={handleVote}>
 			<button>▲</button>
 			{voteCount}
 			<button>▼</button>

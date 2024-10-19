@@ -11,7 +11,8 @@ export const PostShow = (props) => {
 	let postId = props.match.params.id;
 	const [hooksReady, setHooksReady] = useState(false);
 	const post = useSelector(state => state?.entities?.posts[props?.match?.params?.id]);
-	
+	require('./postShow.css');
+
 	const dispatch = useDispatch();
 
 	useEffect(() => {
@@ -31,11 +32,16 @@ export const PostShow = (props) => {
 	if (!hooksReady) return <div>Loading...</div>;
 
 	return (
-		<div>
-			<VoteButton postId={post._id} netUpvotes={post.netUpvotes} />
-			<h1>{post.title}</h1>
-			<h2>{post.body}</h2>
-			<CommentForm postId={post._id} />
+		<div className="post-show-container">
+			<div className='post-comment-form-container'>
+				<div className='post-show'>
+					<VoteButton postId={post._id} netUpvotes={post.netUpvotes} />
+					<h1 className='post-title'>{post.title}</h1>
+					<h2>{post.body}</h2>
+				</div>
+
+				<CommentForm postId={post._id} />
+			</div>
 			<CommentIndex postId={post._id}/>
 		</div>
 	);

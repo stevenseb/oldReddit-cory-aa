@@ -1,0 +1,17 @@
+.post-show-container {
+    position: relative;
+}
+
+.post-comment-form-container {
+    margin-left: 25px;
+}
+
+.post-show {
+    display: flex;
+    align-items: center;
+}
+
+.post-title {
+    font-size: 16px;
+    color: #551a8b;
+}

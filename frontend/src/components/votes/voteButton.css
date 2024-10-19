@@ -1,0 +1,8 @@
+.vote-button {
+    font-weight: bold;
+    color: #c6c6c6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-right: 15px;
+}

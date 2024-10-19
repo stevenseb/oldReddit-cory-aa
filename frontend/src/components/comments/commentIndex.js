@@ -2,6 +2,7 @@ import { fetchComments, clearComments, selectCommentsArray } from '../../store/s
 import { CommentIndexItem } from './commentIndexItem'
 import { VoteButton } from '../votes/voteButton';
 import PaginatedList from '../paginatedList';
+require('./commentIndex.css');
 
 export const CommentIndex = ({postId}) => {
 	const initialFilter = { view: "Hot", postId: postId };

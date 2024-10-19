@@ -9,7 +9,7 @@ module.exports = router;
 
 // Helper function to parse query filters
 const parseFilters = (query) => {
-	const { postId, view = 'Hot' } = JSON.parse(query?.filters || '{}');
+	const { postId, view = 'Hot' } = query?.filters || '{}';
 	const { limit = 10, pageToken = null } = query;
 	return { postId, view, limit, pageToken };
 };
@@ -22,7 +22,7 @@ const buildQueryAndSort = (postId, view, pageToken) => {
 	if (view === 'Hot') {
 		sortOption = { rankingScore: -1, ...sortOption };
 		if (pageToken) {
-			const { rankingScore, createdAt } = JSON.parse(pageToken);
+			const { rankingScore, createdAt } = pageToken;
 			query.$or = [
 				{ rankingScore: {$lt: rankingScore} },
 				{ rankingScore, createdAt: {$lt: new Date(createdAt)} }
@@ -31,13 +31,13 @@ const buildQueryAndSort = (postId, view, pageToken) => {
 	} else if(view === "New") {
 		sortOption = { createdAt: -1 };
 		if (pageToken) {
-			const { createdAt } = JSON.parse(pageToken);
+			const { createdAt } = pageToken;
 			query.createdAt =  {$lt: new Date(createdAt)} 
 		}
 	} else if (view === 'Top') {
 		sortOption = { netUpvotes: -1, createdAt: -1 };
 		if (pageToken) {
-			const { netUpvotes, createdAt } = JSON.parse(pageToken);
+			const { netUpvotes, createdAt } = pageToken;
 			query.$or = [
 				{ netUpvotes: { $lt: netUpvotes } },
 				{ netUpvotes, createdAt: { $lt: new Date(createdAt) } }
@@ -65,19 +65,14 @@ const generateNextPageToken = (items, limit, view) => {
 };
 
 // Helper function to fetch replies with pagination
-const fetchReplies = async (parentCommentId, limit, pageToken, repliesOnly) => {
+const fetchRepliesRecursive = async (parentCommentId, limit, pageToken) => {
 	let query = { parentCommentId };
 	let sortOption = { rankingScore: -1, createdAt: -1 }; // Replies sorted by ranking and creation time
 
 	// Handle pagination for replies
-	if (pageToken) {
-	// const { rankingScore, createdAt } = JSON.parse(pageToken);
-	// postsQuery = postsQuery.or([
-	// 	{ rankingScore: { $lt: rankingScore } },
-	// 	{ rankingScore: rankingScore, createdAt: { $lt: new Date(createdAt) } }
-	// ]);
-		const { rankingScore, createdAt } = JSON.parse(pageToken);
-		console.log("pagerank: ",rankingScore)
+	if (pageToken) {s
+		const { rankingScore, createdAt } = pageToken;
+		
 		query.$or = [
 			{ rankingScore: { $lt: rankingScore } },
 			{ rankingScore: rankingScore, createdAt: { $lt: new Date(createdAt) } }
@@ -85,11 +80,16 @@ const fetchReplies = async (parentCommentId, limit, pageToken, repliesOnly) => {
 			
 	}
 
-	const replies = await Comment.find(query).sort(sortOption).limit(parseInt(limit));
+	const replies = await Comment.find(query).sort(sortOption).limit(parseInt(limit)).lean();
+
+	// Fetch replies for each reply recursively
+	for (const reply of replies) {
+		const { replies: childReplies, nextPageToken: childReplyPageToken } = await fetchRepliesRecursive(reply._id, limit, null);
+		reply.replies = childReplies; // Attach child replies
+		reply.replyNextPageToken = childReplyPageToken; // Attach pagination token for replies of replies
+	}
 
 	const nextPageToken = generateNextPageToken(replies, limit, 'Replies');
-
-	console.log(replies)
 
 	return { replies, nextPageToken };
 };
@@ -108,7 +108,7 @@ router.get('/', async (req, res) => {
 
 		// Fetch replies for each top-level comment with pagination
 		for (const comment of topLevelComments) {
-			const { replies, nextPageToken: replyPageToken } = await fetchReplies(comment._id, replyLimit, null);
+			const { replies, nextPageToken: replyPageToken } = await fetchRepliesRecursive(comment._id, replyLimit, null);
 			comment.replies = replies; 
 			comment.replyNextPageToken = replyPageToken; // Attach pagination token for replies
 		}
@@ -129,7 +129,7 @@ router.get('/:commentId/replies', async (req, res) => {
 		const { commentId } = req.params;
 
 		// Fetch replies for the specified comment with pagination
-		const { replies, nextPageToken } = await fetchReplies(commentId, limit, pageToken, 'Replies');
+		const { replies, nextPageToken } = await fetchRepliesRecursive(commentId, limit, pageToken, 'Replies');
 
 		res.json({ replies, nextPageToken });
 	} catch (err) {

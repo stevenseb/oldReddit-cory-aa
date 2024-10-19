@@ -27,7 +27,7 @@ const postErrorsSlice = createSlice({
 		})
 		.addCase(fetchPosts.rejected, (state, action) => {
 			console.log(action)
-			state = Object.values(action.payload);
+			state = Object.values(action.error);
 			return state;
 		})
 		.addCase(createPost.fulfilled, (state, action) => {

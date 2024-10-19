@@ -12,7 +12,7 @@ module.exports = router;
 
 router.get('/', async (req, res) => {
 	try {
-		const { view = "Hot", subRedditId } = JSON.parse(req.query?.filters);
+		const { view = "Hot", subRedditId } = req.query?.filters;
 		const { limit = 10, pageToken = null } = req.query;
 		
 		// Ensure subRedditId is provided
@@ -33,14 +33,13 @@ router.get('/', async (req, res) => {
 
 		// Step 2: Query the Post collection using the postIds
 		let postsQuery = Post.find({ _id: { $in: postIds } });
-
 		// Step 3: Apply sorting based on the view filter
 		if (view === 'New') {
 			// Sort by creation date (newest first) and paginate with createdAt
             postsQuery = postsQuery.sort({ createdAt: -1 });
             // Pagination based on createdAt timestamp
             if (pageToken) {
-				const {createdAt} = JSON.parse(pageToken)
+				const {createdAt} = pageToken;
                 postsQuery = postsQuery.where('createdAt').lt(new Date(createdAt));
             }
 		} else if (view === 'Top') {
@@ -49,8 +48,8 @@ router.get('/', async (req, res) => {
 
             // Pagination based on netUpvotes with createdAt fallback
             if (pageToken) {	
-                const { netUpvotes, createdAt } = JSON.parse(pageToken);
-				console.log(netUpvotes, createdAt)
+                const { netUpvotes, createdAt } = pageToken;
+
                 postsQuery = postsQuery.or([
                     { netUpvotes: { $lt: netUpvotes } },
                     { netUpvotes: netUpvotes, createdAt: { $lt: new Date(createdAt) } }
@@ -63,7 +62,7 @@ router.get('/', async (req, res) => {
 
             // Pagination based on rankingScore with createdAt fallback
             if (pageToken) {
-                const { rankingScore, createdAt } = JSON.parse(pageToken);
+                const { rankingScore, createdAt } = pageToken;
                 postsQuery = postsQuery.or([
                     { rankingScore: { $lt: rankingScore } },
                     { rankingScore: rankingScore, createdAt: { $lt: new Date(createdAt) } }
@@ -105,41 +104,10 @@ router.get('/', async (req, res) => {
 	}
 });
 
-const _formatComments = (commentList) => {
-	const commentMap = {};
-
-	// move all the comments into a map of id => comment
-	commentList.forEach((comment) => (commentMap[comment._id] = comment));
-
-	// iterate over the comments again and correctly nest the children
-	commentList.forEach((comment) => {
-		if (comment.parentCommentId != null) {
-			const parent = commentMap[comment.parentCommentId];
-			(parent.children = parent.children || []).push(comment);
-		}
-	});
-	debugger;
-	// filter the list to return a list of correctly nested comments
-	return commentList.filter((comment) => {
-		return comment.parentCommentId == null;
-	});
-};
-
 router.get('/:id', async (req, res) => {
 	try {
 		//TODO: Add validations to endpoint
-		let post = await Post.findById(req.params.id)//.lean().populate('comments'); //.populate([
-		// 	{
-		// 		path: 'comments',
-		// 		model: 'comments',
-		// 		populate: {
-		// 			path: 'childComments',
-		// 			model: 'comments',
-		// 		},
-		// 	},
-		// ]);
-
-		// post.formattedComments = _formatComments(post.comments);
+		let post = await Post.findById(req.params.id)
 		res.json(post);
 	} catch (errors) {
 		console.log(errors);

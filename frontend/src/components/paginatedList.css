@@ -3,7 +3,7 @@
     margin-left: 25px;
     margin-top: 5px;
 }
-.filters {
+.posts-filters {
     position: absolute;
     top: -25px;
     left: 100px
@@ -19,18 +19,23 @@
     cursor: pointer;
 }
 
-/* Style for filter buttons when rendering comments */
-.comment-filter-button {
-    background-color: #0066ff;
-    color: white;
-    border: none;
-    padding: 10px;
-    margin-right: 5px;
-    cursor: pointer;
+.comments-filters {
+    border-top: 1px dotted gray;
 }
 
-/* Add any common styles for both buttons */
-button {
-    font-size: 16px;
-    border-radius: 4px;
+.comments-filters::before {
+    content: "Sort By:";
+    color: gray;
+    margin-right: 5px;
+    /* position: absolute; */
+}
+
+/* Style for filter buttons when rendering comments */
+.comment-filter-button {
+    color: gray;
+    font-weight: bold;
+    border: none;
+    padding: 5px;
+    margin-right: 5px;
+    cursor: pointer;
 }

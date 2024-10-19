@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { createComment } from '../../store/slices/entities/commentSlice';
-// import { useHistory } from 'react-router-dom';
+require('./commentForm.css');
 
 export const CommentForm = (props) => {
 	// TODO: ADD EDIT FUNCTIONALITY TO FORM
@@ -50,16 +50,16 @@ export const CommentForm = (props) => {
 	};
 
 	return (
-		<form onSubmit={handleSubmit}>
+		<form className='comment-form' onSubmit={handleSubmit}>
 			{/* <div className="errors">{renderErrors()}</div> */}
-			<input
+			<textarea
 				required
+				className='comment-text-area'
 				type="text"
 				value={body}
 				onChange={update('body')}
-				placeholder="Enter Comment"
 			/>
-			<input type="submit" value="Create Comment" />
+			<input className='comment-submit' type="submit" value="Save" />
 		</form>
 	);
 };

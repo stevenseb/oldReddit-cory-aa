@@ -2,6 +2,7 @@ import React from 'react';
 import { useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { deletePost } from '../../store/slices/entities/postSlice';
+require('./postIndexItem.css')
 
 export const PostIndexItem = ({ post }) => {
 	const dispatch = useDispatch();
@@ -11,9 +12,9 @@ export const PostIndexItem = ({ post }) => {
 		/*res =*/ await dispatch(deletePost(post._id));
 	};
 	return (
-		<li>
+		<li className='link-container'>
 			<h1>
-				<Link to={`/posts/${post._id}`}>{post.title}</Link>
+				<Link className='post-link' to={`/posts/${post._id}`}>{post.title}</Link>
 				{/* <button onClick={handleDelete}>Delete</button> */}
 			</h1>
 		</li>

@@ -82,7 +82,7 @@ const PaginatedList = ({ fetchAction, clearAction, selectData, renderItem, initi
 	return (
 		<div className='filter-container'>
 			{/* Filter buttons */}
-			<div className="filters">
+			<div className={entityName.concat("-filters")}>
 				<button className={getButtonClass()} onClick={() => handleFilterChange("Hot")}>Hot</button>
 				<button className={getButtonClass()} onClick={() => handleFilterChange("New")}>New</button>
 				<button className={getButtonClass()} onClick={() => handleFilterChange("Top")}>Top</button>

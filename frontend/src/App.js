@@ -36,7 +36,7 @@ const composeComponents = (...components) => {
 // TODO: CDN
 // TODO: Implement subscriptions to subreddits
 // TODO: Add filter for time on TOP
-// TODO: User Profiles
+// TODO: User Profiles including vote history
 
 function App() {
 	return (

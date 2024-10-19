@@ -1,8 +1,17 @@
-.post-index {
-	color: blue;
-	font-weight: 500;
-}
-
 .post-container {
 	display: flex;
+	position: relative;
+	padding-left: 20px;
+	font-size: medium;
+	align-items: center;
+}
+
+.rank {
+	color: #c6c6c6;
+	font-size: medium;
+	font-family: arial;
+	font-weight: bold;
+	position: absolute;
+	left: -5px;
+	top: 24px;
 }

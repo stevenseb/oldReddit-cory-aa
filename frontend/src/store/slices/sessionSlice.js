@@ -30,7 +30,7 @@ const _initialState = () => {
 };
 
 export const signUpUser = createAsyncThunk(
-	'setCurrentUser',
+	'user/signup',
 	async (userData, { rejectWithValue }) => {
 		try {
 			let res = await axios.post('/api/users/signup', userData);
@@ -49,7 +49,7 @@ export const signUpUser = createAsyncThunk(
 );
 
 export const loginUser = createAsyncThunk(
-	'setCurrentUser',
+	'user/login',
 	async (userData, { rejectWithValue }) => {
 		try {
 			let res = await axios.post('/api/users/login', userData);
@@ -67,7 +67,7 @@ export const loginUser = createAsyncThunk(
 	}
 );
 
-export const logoutUser = createAsyncThunk('setCurrentUser', async () => {
+export const logoutUser = createAsyncThunk('user/logout', async () => {
 	localStorage.removeItem('jwtToken');
 	// Remove auth header for future requests
 	setAuthToken(false);
@@ -78,19 +78,20 @@ const sessionSlice = createSlice({
 	name: 'session',
 	initialState: _initialState(),
 	reducers: {},
-	extraReducers: {
-		[signUpUser.fulfilled]: (state, action) => {
+	extraReducers: (builder) => {
+		builder
+		.addCase(signUpUser.fulfilled, (state, action) => {
 			state = action.payload;
-			return state;
-		},
-		[loginUser.fulfilled]: (state, action) => {
+			return state
+		})
+		.addCase(loginUser.fulfilled, (state, action) => {
 			state = action.payload;
-			return state;
-		},
-		[logoutUser.fulfilled]: (state, action) => {
+			return state
+		})
+		.addCase(logoutUser.fulfilled, (state, action) => {
 			state = action.payload;
-			return state;
-		},
+			return state
+		})
 	},
 });
 

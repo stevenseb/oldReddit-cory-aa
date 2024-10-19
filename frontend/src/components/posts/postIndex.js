@@ -1,39 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
-import { fetchPosts } from '../../store/slices/entities/postSlice';
+import React/*, { useState, useEffect, useRef } */from 'react';
+import { fetchPosts, clearPosts, selectPostArray } from '../../store/slices/entities/postSlice';
 import { PostIndexItem } from './postIndexItem';
 import { VoteButton } from '../votes/voteButton';
+import PaginatedList from '../paginatedList';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {faAlignLeft} from '@fortawesome/free-solid-svg-icons';
 require('./postIndex.css');
 
 export const PostIndex = (props) => {
-	const [hooksReady, setHooksReady] = useState(false);
-	const [posts, setPosts] = useState([]);
-	const dispatch = useDispatch();
-
-	useEffect(() => {
-		const fetchPostFromUseEffect = async () => {
-			let res = await dispatch(fetchPosts());
-			if (res.type === 'receivePosts/fulfilled') {
-				setPosts(Object.values(res.payload));
-				setHooksReady(true);
-			}
-		};
-		fetchPostFromUseEffect();
-	}, [dispatch]);
-
-	if (!hooksReady) return <div></div>;
-
-	const renderPosts = () => {
-		return (
-			<ul className="post-index">
-				{posts.map((post, idx) => (
-					<div className="post-container" key={`post${idx}`}>
-						<VoteButton postId={post._id} voteCount={post.voteCount} />
-						<PostIndexItem post={post} />
-					</div>
-				))}
-			</ul>
-		);
-	};
-	return renderPosts();
+	const initialFilter = { view: "Hot", subRedditId: props.match.params.id };
+	
+	return (
+		<PaginatedList
+			fetchAction={fetchPosts}
+			clearAction={clearPosts}
+			selectData={selectPostArray}
+			initialFilter={initialFilter}
+			entityName="posts"
+			renderItem={(post, idx) => (
+				<div className="post-container" key={`post${idx}`}>
+					<span className="rank">{idx+1}</span>
+					<VoteButton postId={post._id} netUpvotes={post.netUpvotes} />
+					<FontAwesomeIcon size="2x" icon={faAlignLeft} />
+					<PostIndexItem post={post} />
+				</div>
+			)}
+		/>
+	);
 };

@@ -1,64 +1,48 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { fetchPost } from '../../store/slices/entities/postSlice';
-import { CommentIndexItem } from '../comments/commentIndexItem';
+import { CommentIndex } from '../comments/commentIndex';
 import { CommentForm } from '../comments/commentForm';
 import { VoteButton } from '../votes/voteButton';
 import { useSelector } from 'react-redux';
-import { clearComments } from '../../store/slices/entities/commentSlice';
+import { clearComments, fetchComments } from '../../store/slices/entities/commentSlice';
 
 export const PostShow = (props) => {
 	let postId = props.match.params.id;
 	const [hooksReady, setHooksReady] = useState(false);
-	const [post, setPost] = useState({});
-	const comments = useSelector((state) =>
-		Object.values(state.entities.comments)
-	);
-	// const [statefulComments, setStatefulComments] = useState([]);
+	const post = useSelector(state => state?.entities?.posts[props?.match?.params?.id]);
+	require('./postShow.css');
 
 	const dispatch = useDispatch();
+
 	useEffect(() => {
-		let mounted = true;
-		const fetchPostWithComments = async () => {
-			let res = await dispatch(fetchPost(postId));
-			if (mounted && res.type === 'receivePost/fulfilled') {
-				setPost(res.payload);
-				setHooksReady(true);
-			}
+		const fetchOnePost = async () => {
+			let postRes = await dispatch(fetchPost(postId));	
+			if (postRes.type === 'posts/fetchOne/fulfilled') {
+                setHooksReady(true); 
+            }
 		};
-		if (post._id != postId) {
-			dispatch(clearComments());
-			fetchPostWithComments();
-		}
-		// cleanup function
-		return () => (mounted = false);
-	}, [post, dispatch, postId]);
+		
+		setHooksReady(false)
+		dispatch(clearComments());
+		fetchOnePost();
+		
+	}, [dispatch, props.match.params.id]);
 
-	// useEffect(() => {
-	// 	setStatefulComments(comments);
-	// }, []);
+	if (!hooksReady) return <div>Loading...</div>;
 
-	const renderComments = () => {
-		return (
-			<ul>
-				{comments.map((comment, idx) => (
-					<div className="comment-container" key={`comment${idx}`}>
-						<VoteButton commentId={comment._id} voteCount={comment.voteCount} />
-						<CommentIndexItem comment={comment} />
-					</div>
-				))}
-			</ul>
-		);
-	};
-
-	if (!hooksReady) return <div></div>;
 	return (
-		<div>
-			<VoteButton postId={post._id} voteCount={post.voteCount} />
-			<h1>{post.title}</h1>
-			<h2>{post.body}</h2>
-			<CommentForm postId={post._id} />
-			{renderComments()}
+		<div className="post-show-container">
+			<div className='post-comment-form-container'>
+				<div className='post-show'>
+					<VoteButton postId={post._id} netUpvotes={post.netUpvotes} />
+					<h1 className='post-title'>{post.title}</h1>
+					<h2>{post.body}</h2>
+				</div>
+
+				<CommentForm postId={post._id} />
+			</div>
+			<CommentIndex postId={post._id}/>
 		</div>
 	);
 };

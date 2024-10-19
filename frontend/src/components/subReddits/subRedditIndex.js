@@ -1,26 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchSubReddits } from '../../store/slices/entities/subRedditSlice';
+import { fetchSubReddits, selectSubRedditsArray } from '../../store/slices/entities/subRedditSlice';
 import { SubRedditIndexItem } from './subRedditIndexItem';
 require('./subRedditIndex.css');
 
 export const SubRedditIndex = (props) => {
 	const [hooksReady, setHooksReady] = useState(false);
-	const [subReddits, setSubReddits] = useState([]);
+	const subReddits = useSelector(selectSubRedditsArray);
 	const user = useSelector((state) => state.session);
 	const dispatch = useDispatch();
+
 	useEffect(() => {
 		const fetchSubs = async () => {
 			let res = await dispatch(fetchSubReddits(user.id));
-			if (res.type === 'receiveSubReddits/fulfilled') {
-				setSubReddits(Object.values(res.payload));
+			if (res.type === 'subReddits/fetchAll/fulfilled') {
 				setHooksReady(true);
 			}
 		};
+
 		if (!subReddits.length) {
 			fetchSubs();
 		}
-	}, [dispatch, subReddits]);
+	}, [dispatch, user.id, subReddits.length]);
 	if (!hooksReady) return <div></div>;
 
 	const renderSubReddits = () => {
@@ -32,6 +33,7 @@ export const SubRedditIndex = (props) => {
 			</ul>
 		);
 	};
+	
 	return (
 		<div>
 			{/* TODO: ADD MY SUBREDDITS DROPDOWN */}

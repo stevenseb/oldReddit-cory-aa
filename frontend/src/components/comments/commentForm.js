@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { createComment } from '../../store/slices/entities/commentSlice';
-// import { useHistory } from 'react-router-dom';
+require('./commentForm.css');
 
 export const CommentForm = (props) => {
 	// TODO: ADD EDIT FUNCTIONALITY TO FORM
@@ -35,31 +35,31 @@ export const CommentForm = (props) => {
 	// };
 
 	const handleSubmit = async (e) => {
-		let postId = props.postId;
-		let parentCommentId = props.parentCommentId;
 		e.preventDefault();
-		let comment = {
-			postId,
-			body,
-			parentCommentId,
-		};
+		const { postId, parentCommentId, onNewReply } = props;
+		let comment = { postId, body, parentCommentId };
+
 		let res = await dispatch(createComment(comment));
-		if ((res.type = 'receiveComment/fulfilled')) {
+		if ((res.type = 'comments/create/fulfilled')) {
 			setBody('');
 		}
+
+		if (onNewReply) {
+				onNewReply(res.payload);
+			}
 	};
 
 	return (
-		<form onSubmit={handleSubmit}>
+		<form className='comment-form' onSubmit={handleSubmit}>
 			{/* <div className="errors">{renderErrors()}</div> */}
-			<input
+			<textarea
 				required
+				className='comment-text-area'
 				type="text"
 				value={body}
 				onChange={update('body')}
-				placeholder="Enter Comment"
 			/>
-			<input type="submit" value="Create Comment" />
+			<input className='comment-submit' type="submit" value="Save" />
 		</form>
 	);
 };

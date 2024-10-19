@@ -1,4 +1,4 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { buildCreateSlice, createSlice } from '@reduxjs/toolkit';
 import {
 	fetchPost,
 	fetchPosts,
@@ -11,47 +11,49 @@ const postErrorsSlice = createSlice({
 	name: 'postErrors',
 	initialState: [],
 	reducers: {},
-	extraReducers: {
-		[fetchPost.fulfilled]: (state, action) => {
+	extraReducers: (builder) => {
+		builder
+		.addCase(fetchPost.fulfilled, (state, action) => {
 			state = [];
 			return state;
-		},
-		[fetchPost.rejected]: (state, action) => {
+		})
+		.addCase(fetchPost.rejected, (state, action) => {
 			state = Object.values(action.payload);
 			return state;
-		},
-		[fetchPosts.fulfilled]: (state, action) => {
+		})
+		.addCase(fetchPosts.fulfilled, (state, action) => {
 			state = [];
 			return state;
-		},
-		[fetchPosts.rejected]: (state, action) => {
-			state = Object.values(action.payload);
+		})
+		.addCase(fetchPosts.rejected, (state, action) => {
+			console.log(action)
+			state = Object.values(action.error);
 			return state;
-		},
-		[createPost.fulfilled]: (state, action) => {
+		})
+		.addCase(createPost.fulfilled, (state, action) => {
 			state = [];
 			return state;
-		},
-		[createPost.rejected]: (state, action) => {
+		})
+		.addCase(createPost.rejected, (state, action) => {
 			state = Object.values(action.payload);
 			return state;
-		},
-		[deletePost.rejected]: (state, action) => {
+		})
+		.addCase(deletePost.rejected, (state, action) => {
 			state = Object.values(action.payload);
 			return state;
-		},
-		[deletePost.fulfilled]: (state, action) => {
+		})
+		.addCase(deletePost.fulfilled, (state, action) => {
 			state = [];
 			return state;
-		},
-		[updatePost.rejected]: (state, action) => {
+		})
+		.addCase(updatePost.rejected, (state, action) => {
 			state = Object.values(action.payload);
 			return state;
-		},
-		[updatePost.fulfilled]: (state, action) => {
+		})
+		.addCase(updatePost.fulfilled, (state, action) => {
 			state = [];
 			return state;
-		},
+		})
 	},
 });
 

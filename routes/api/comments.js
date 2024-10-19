@@ -2,18 +2,139 @@ const express = require('express');
 const Comment = require('../../models/Comment');
 const passport = require('passport');
 const validateCommentInput = require('../../validation/comment');
-const Post = require('../../models/Post');
 
 const router = express.Router();
 
 module.exports = router;
 
+// Helper function to parse query filters
+const parseFilters = (query) => {
+	const { postId, view = 'Hot' } = query?.filters || '{}';
+	const { limit = 10, pageToken = null } = query;
+	return { postId, view, limit, pageToken };
+};
+
+// Helper function to build the query and sort options based on the view
+const buildQueryAndSort = (postId, view, pageToken) => {
+	let query = { postId, parentCommentId: null }; // Fetch only top-level comments
+	let sortOption = {};
+
+	if (view === 'Hot') {
+		sortOption = { rankingScore: -1, ...sortOption };
+		if (pageToken) {
+			const { rankingScore, createdAt } = pageToken;
+			query.$or = [
+				{ rankingScore: {$lt: rankingScore} },
+				{ rankingScore, createdAt: {$lt: new Date(createdAt)} }
+			];
+		}
+	} else if(view === "New") {
+		sortOption = { createdAt: -1 };
+		if (pageToken) {
+			const { createdAt } = pageToken;
+			query.createdAt =  {$lt: new Date(createdAt)} 
+		}
+	} else if (view === 'Top') {
+		sortOption = { netUpvotes: -1, createdAt: -1 };
+		if (pageToken) {
+			const { netUpvotes, createdAt } = pageToken;
+			query.$or = [
+				{ netUpvotes: { $lt: netUpvotes } },
+				{ netUpvotes, createdAt: { $lt: new Date(createdAt) } }
+			];
+		}
+	}
+
+	return { query, sortOption };
+};
+
+// Helper function to generate the nextPageToken for pagination
+const generateNextPageToken = (items, limit, view) => {
+	if (items.length < limit) return null;
+
+	const lastItem = items[items.length - 1];
+	const tokenData = { createdAt: lastItem.createdAt };
+
+	if (view === 'Top' && lastItem.netUpvotes) {
+		tokenData.netUpvotes = lastItem.netUpvotes;
+	} else if (view === 'Replies' || view === 'Hot') {
+		tokenData.rankingScore = lastItem.rankingScore
+	}
+
+	return JSON.stringify(tokenData);
+};
+
+// Helper function to fetch replies with pagination
+const fetchRepliesRecursive = async (parentCommentId, limit, pageToken) => {
+	let query = { parentCommentId };
+	let sortOption = { rankingScore: -1, createdAt: -1 }; // Replies sorted by ranking and creation time
+
+	// Handle pagination for replies
+	if (pageToken) {s
+		const { rankingScore, createdAt } = pageToken;
+		
+		query.$or = [
+			{ rankingScore: { $lt: rankingScore } },
+			{ rankingScore: rankingScore, createdAt: { $lt: new Date(createdAt) } }
+		]
+			
+	}
+
+	const replies = await Comment.find(query).sort(sortOption).limit(parseInt(limit)).lean();
+
+	// Fetch replies for each reply recursively
+	for (const reply of replies) {
+		const { replies: childReplies, nextPageToken: childReplyPageToken } = await fetchRepliesRecursive(reply._id, limit, null);
+		reply.replies = childReplies; // Attach child replies
+		reply.replyNextPageToken = childReplyPageToken; // Attach pagination token for replies of replies
+	}
+
+	const nextPageToken = generateNextPageToken(replies, limit, 'Replies');
+
+	return { replies, nextPageToken };
+};
+
 router.get('/', async (req, res) => {
 	try {
-		let comments = await Comment.find({ postId: req.body.postId });
-		res.json(comments);
+		
+		const { postId, view, limit, pageToken } = parseFilters(req.query);
+
+		const { query, sortOption } = buildQueryAndSort(postId, view, pageToken);
+
+		const topLevelComments = await Comment.find(query).sort(sortOption).limit(parseInt(limit)).lean();
+
+		// Limit replies per top-level comment
+		const replyLimit = 5;
+
+		// Fetch replies for each top-level comment with pagination
+		for (const comment of topLevelComments) {
+			const { replies, nextPageToken: replyPageToken } = await fetchRepliesRecursive(comment._id, replyLimit, null);
+			comment.replies = replies; 
+			comment.replyNextPageToken = replyPageToken; // Attach pagination token for replies
+		}
+
+		const nextPageToken = generateNextPageToken(topLevelComments, limit, view);
+
+		res.json({ comments: topLevelComments, nextPageToken });
+
 	} catch (err) {
+		console.error(err);
 		res.status(404).json({ noCommentsFound: 'No comments yet' });
+	}
+});
+
+router.get('/:commentId/replies', async (req, res) => {
+	try {
+		const { limit = 10, pageToken = null } = req.query;
+		const { commentId } = req.params;
+
+		// Fetch replies for the specified comment with pagination
+		const { replies, nextPageToken } = await fetchRepliesRecursive(commentId, limit, pageToken, 'Replies');
+
+		res.json({ replies, nextPageToken });
+	} catch (err) {
+		console.error(err);
+		res.status(404).json({ noRepliesFound: 'No replies yet' });
 	}
 });
 
@@ -25,6 +146,7 @@ router.post(
 		if (!isValid) {
 			return res.status(400).json(errors);
 		}
+		console.log("Comment is valid")
 		try {
 			const comment = new Comment({
 				userId: req.user.id,
@@ -33,22 +155,9 @@ router.post(
 			});
 
 			if (req.body.parentCommentId) {
-				// const topLevelComment = await Comment.findById(
-				// 	req.body.topLevelCommentId
-				// );
-				const [parentComment, post] = await Promise.all([
-					Comment.findById(req.body.parentCommentId),
-					Post.findById(req.body.postId),
-				]);
-				parentComment.childComments.push(comment.id);
-				post.comments.push(comment.id);
 				comment.parentCommentId = req.body.parentCommentId;
-				await Promise.all([comment.save(), post.save(), parentComment.save()]);
-			} else {
-				const post = await Post.findById(req.body.postId);
-				post.comments.push(comment.id);
-				await Promise.all([comment.save(), post.save()]);
 			}
+			comment.save()
 
 			res.json(comment);
 		} catch (errors) {

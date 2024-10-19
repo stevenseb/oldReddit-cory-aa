@@ -1,0 +1,22 @@
+.comment-text-area {
+    height: 106px;
+    width: 506px;
+    border-width: 1px;
+    border-style: solid;
+    border-color: rgb(118, 118, 118);
+}
+
+.comment-form {
+    position: relative;
+    margin-bottom: 50px;
+}
+
+.comment-submit {
+    position: absolute;
+    bottom: -35px;
+    background-color: #efefef;
+    padding: 2px 5px 2px;
+    border-width: 1px;
+    border-style: solid;
+    left: 0px;
+}

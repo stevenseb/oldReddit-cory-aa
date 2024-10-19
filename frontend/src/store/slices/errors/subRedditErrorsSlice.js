@@ -11,47 +11,38 @@ const subRedditErrorsSlice = createSlice({
 	name: 'subRedditErrors',
 	initialState: [],
 	reducers: {},
-	extraReducers: {
-		[fetchSubReddit.fulfilled]: (state, action) => {
+	extraReducers: (builder) => {
+		builder
+		.addCase(fetchSubReddit.fulfilled, (state, action) => {
 			state = [];
-			return state;
-		},
-		[fetchSubReddit.rejected]: (state, action) => {
+		})
+		.addCase(fetchSubReddit.rejected, (state, action) => {
 			state = Object.values(action.payload);
-			return state;
-		},
-		[fetchSubReddits.fulfilled]: (state, action) => {
+		})
+		.addCase(fetchSubReddits.fulfilled, (state, action) => {
 			state = [];
-			return state;
-		},
-		[fetchSubReddits.rejected]: (state, action) => {
+		})
+		.addCase(fetchSubReddits.rejected, (state, action) => {
 			state = Object.values(action.payload);
-			return state;
-		},
-		[createSubReddit.fulfilled]: (state, action) => {
+		})
+		.addCase(createSubReddit.fulfilled, (state, action) => {
 			state = [];
-			return state;
-		},
-		[createSubReddit.rejected]: (state, action) => {
+		})
+		.addCase(createSubReddit.rejected, (state, action) => {
 			state = Object.values(action.payload);
-			return state;
-		},
-		[deleteSubReddit.rejected]: (state, action) => {
+		})
+		.addCase(deleteSubReddit.rejected, (state, action) => {
 			state = Object.values(action.payload);
-			return state;
-		},
-		[deleteSubReddit.fulfilled]: (state, action) => {
+		})
+		.addCase(deleteSubReddit.fulfilled, (state, action) => {
+			state = []
+		})
+		.addCase(updateSubReddit.rejected, (state, action) => {
+			state = Object.values(action.payload);
+		})
+		.addCase(updateSubReddit.fulfilled, (state, action) => {
 			state = [];
-			return state;
-		},
-		[updateSubReddit.rejected]: (state, action) => {
-			state = Object.values(action.payload);
-			return state;
-		},
-		[updateSubReddit.fulfilled]: (state, action) => {
-			state = [];
-			return state;
-		},
+		})
 	},
 });
 

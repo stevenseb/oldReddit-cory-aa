@@ -18,30 +18,31 @@ const PostSchema = new Schema(
 		body: {
 			type: String,
 		},
-		voteCount: {
+		rankingScore: {
 			type: Number,
 			default: 0,
 		},
-		votes: [
-			{
-				type: Schema.Types.ObjectId,
-				ref: 'votes',
-			},
-		],
-		subReddits: [
-			{
-				type: Schema.Types.ObjectId,
-				ref: 'subReddits',
-			},
-		],
-		comments: [
-			{
-				type: Schema.Types.ObjectId,
-				ref: 'comments',
-			},
-		],
+		netUpvotes: {
+			type: Number,
+			default: 0,
+		},
 	},
 	{ timestamps: true }
 );
+
+// Instance method to calculate the rankingScore with an incoming vote
+PostSchema.methods.calculateRankingScore = function() {
+    const G = 1.8; // The decay factor (adjust as needed)
+
+    // Get the number of hours since the post was created
+    const now = new Date();
+    const postAgeInMilliseconds = now - this.createdAt;
+    const postAgeInHours = postAgeInMilliseconds / (1000 * 60 * 60); // Convert ms to hours
+    // Calculate the rankingScore using the netUpvotes
+    const rankingScore = this.netUpvotes / Math.pow((postAgeInHours + 2), G);
+
+    this.rankingScore = rankingScore;
+};
+
 
 module.exports = Post = mongoose.model('posts', PostSchema);

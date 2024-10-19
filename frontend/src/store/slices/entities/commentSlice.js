@@ -1,12 +1,20 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
-import { fetchPost } from './postSlice';
+import { createSelector } from 'reselect';
+
+const selectComments = (state) => state.entities.comments;
+
+export const selectCommentsArray = createSelector(
+	[selectComments],
+	(comments) => (comments ? Object.values(comments) : [])
+);
 
 export const fetchComments = createAsyncThunk(
-	'receiveComments',
-	async (postId, { rejectWithValue }) => {
+	'comments/fetchAll',
+	async ({filter, pageToken}, { rejectWithValue }) => {
+		console.log(filter, pageToken)
 		try {
-			let res = await axios.get('/api/comments', postId);
+			let res = await axios.get('/api/comments', { params: { filters: filter, pageToken: pageToken}});
 			return res.data;
 		} catch (err) {
 			return rejectWithValue(err.response.data);
@@ -15,7 +23,7 @@ export const fetchComments = createAsyncThunk(
 );
 
 export const createComment = createAsyncThunk(
-	'receiveComment',
+	'comments/create',
 	async (comment, { rejectWithValue }) => {
 		try {
 			let res = await axios.post('/api/comments', comment);
@@ -27,7 +35,7 @@ export const createComment = createAsyncThunk(
 );
 
 export const deleteComment = createAsyncThunk(
-	'removeComment',
+	'comments/delete',
 	async (commentId, { rejectWithValue }) => {
 		try {
 			let res = await axios.delete(`/api/comments/${commentId}`);
@@ -47,57 +55,43 @@ const commentSlice = createSlice({
 			return state;
 		},
 	},
-	extraReducers: {
-		[fetchComments.fulfilled]: (state, action) => {
-			action.payload.forEach((comment) => {
+	extraReducers: (builder) => {
+		builder
+		.addCase(fetchComments.fulfilled, (state, action) => {
+			console.log(action)
+			action?.payload?.comments?.forEach((comment) => {
 				state[comment._id] = comment;
 			});
-			return state;
-		},
-		[createComment.fulfilled]: (state, action) => {
+			return state
+		})
+		.addCase(createComment.fulfilled, (state, action) => {
 			if (!action.payload.parentCommentId) {
 				state[action.payload._id] = action.payload;
-				return state;
 			} else {
 				const _recursiveInsert = (arr) => {
 					for (let i = 0; i < arr.length; i++) {
 						let obj = arr[i];
-						if (obj._id == action.payload.parentCommentId) {
-							(obj.children = obj.children || []).push(action.payload);
+						if (obj._id === action.payload.parentCommentId) {
+							(obj.replies = obj.replies || []).push(action.payload);
 							return;
 						}
-						if (!obj.children) continue;
-						for (let j = 0; j < obj.children.length; j++) {
-							let child = obj.children[j];
-							if (child._id == action.payload.parentCommentId) {
-								return (child.children = child.children || []).push(
-									action.payload
-								);
+						if (!obj.replies) continue;
+						for (let j = 0; j < obj.replies.length; j++) {
+							let child = obj.replies[j];
+							if (child._id === action.payload.parentCommentId) {
+								return (child.replies = child.replies || []).push(action.payload);
 							} else {
-								if (child.children) return _recursiveInsert(child.children);
+								if (child.replies) return _recursiveInsert(child.replies);
 							}
 						}
 					}
 				};
-				_recursiveInsert(Object.values(state));
-				return state;
-				// 	state[action.payload.parentCommentId].childComments.push(
-				// 		action.payload
-				// 	);
-				// 	return state;
+			_recursiveInsert(Object.values(state));
 			}
-		},
-		[deleteComment.fulfilled]: (state, action) => {
+		})
+		.addCase(deleteComment.fulfilled, (state, action) => {
 			state[action.payload._id] = action.payload;
-			return state;
-		},
-		[fetchPost.fulfilled]: (state, action) => {
-			action.payload.formattedComments &&
-				action.payload.formattedComments.forEach((comment) => {
-					state[comment._id] = comment;
-				});
-			return state;
-		},
+		})
 	},
 });
 

@@ -56,7 +56,7 @@ export const PostForm = (props) => {
 			subId: subRedditId,
 		};
 		res = await dispatch(createPost(post));
-		if (res.type === 'receivePost/fulfilled') {
+		if (res.type === 'posts/create/fulfilled') {
 			history.push(`/posts/${res.payload._id}`);
 		}
 	};

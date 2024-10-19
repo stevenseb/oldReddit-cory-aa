@@ -1,0 +1,41 @@
+.filter-container {
+    position: relative;
+    margin-left: 25px;
+    margin-top: 5px;
+}
+.posts-filters {
+    position: absolute;
+    top: -25px;
+    left: 100px
+}
+/* Style for filter buttons when rendering posts */
+.post-filter-button {
+    background-color: #eff7ff;
+    color: #369;
+    border: 1px solid rgb(106, 153, 203);;
+    padding-left: 2px;
+    padding-right: 2px;
+    margin-right: 5px;
+    cursor: pointer;
+}
+
+.comments-filters {
+    border-top: 1px dotted gray;
+}
+
+.comments-filters::before {
+    content: "Sort By:";
+    color: gray;
+    margin-right: 5px;
+    /* position: absolute; */
+}
+
+/* Style for filter buttons when rendering comments */
+.comment-filter-button {
+    color: gray;
+    font-weight: bold;
+    border: none;
+    padding: 5px;
+    margin-right: 5px;
+    cursor: pointer;
+}

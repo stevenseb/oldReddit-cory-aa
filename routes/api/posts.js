@@ -5,6 +5,7 @@ const SubReddit = require('../../models/SubReddit');
 const Comment = require('../../models/Comment');
 const passport = require('passport');
 const validatePostInput = require('../../validation/post');
+const redisClient = require('../../config/redisClient')
 
 const router = express.Router();
 
@@ -19,6 +20,17 @@ router.get('/', async (req, res) => {
 		if (!subRedditId) {
 			return res.status(400).json({ error: "subRedditId is required" });
 		}
+
+		// Step 0: Check the cache
+		const cacheKey = `posts:${subRedditId}:${view}:${limit}:${pageToken?.createdAt || null}`;
+		const cachedPosts = await redisClient.get(cacheKey);
+
+		if (cachedPosts) {
+			console.log('Cache hit for posts')
+			return res.json(JSON.parse(cachedPosts))
+		}
+
+		// Cache miss: Fetch posts from MongoDB
 
 		// Step 1: Get postIds from PostSub based on subRedditId
 		const postSubs = await PostSub.find({ subId: subRedditId }).select('postId');
@@ -94,6 +106,8 @@ router.get('/', async (req, res) => {
             }
 		}
 
+		redisClient.set(cacheKey, JSON.stringify({ posts, nextPageToken: nextPageToken.createdAt }), 'EX', 60 * 5); // Cache for 5 minutes
+
 		return res.json({
 			posts,
 			nextPageToken
@@ -137,6 +151,13 @@ router.post(
 				postId: newPost._id,
 				subId: sub._id
 			})
+
+			const cacheKey = `posts:${req.body.subRedditId}:*`; // Invalidate all related comment caches
+			const keys = await redisClient.keys(cacheKey);
+			for (let i = 0; i < keys.length; i++) {
+				let key = keys[i];
+				await redisClient.del(key);
+			}
 			
 			await Promise.all([newPost.save(), postSub.save()]);
 			res.json(newPost);

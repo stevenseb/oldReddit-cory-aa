@@ -22,7 +22,7 @@ service: oldReddit
 
 provider:
   name: aws
-  runtime: nodejs12.x
+  runtime: nodejs22.x
 
 # you can overwrite defaults here
 #  stage: dev
@@ -45,8 +45,8 @@ provider:
 #            - "/*"
 
 # you can define service wide environment variables here
-#  environment:
-#    variable1: value1
+environment:
+  NODE_ENV: 'development'
 
 # you can add packaging information here
 #package:
@@ -58,15 +58,24 @@ provider:
 #    - exclude-me-dir/**
 
 functions:
-  hello:
-    handler: handler.hello
-#    The following are a few example events you can configure
-#    NOTE: Please make sure to change your handler code to work with those events
-#    Check the event documentation for details
-#    events:
-#      - http:
-#          path: users/create
-#          method: get
+  signup:
+    handler: routes/api/auth/signup.handler
+    events:
+      - http:
+          path: signup
+          method: post
+  login:
+    handler: routes/api/auth/login.handler
+    events:
+      - http:
+          path: login
+          method: post
+  current:
+    handler: routes/api/auth/current.handler
+    events:
+      - http:
+          path: current
+          method: get
 #      - websocket: $connect
 #      - s3: ${env:BUCKET}
 #      - schedule: rate(10 minutes)

@@ -1,3 +1,7 @@
+Here's an updated and refined version of your README based on the MongoDB strategy you're incorporating:
+
+---
+
 # MERN Stack Reddit-Style Application
 
 A full-stack web application built with the MERN stack (MongoDB, Express, React, and Node.js) that mimics key features of Reddit. This project focuses on efficient data fetching, scalability, performance optimizations, and up-to-date security practices.
@@ -8,43 +12,121 @@ A full-stack web application built with the MERN stack (MongoDB, Express, React,
 - [Highlights](#highlights)
 - [Usage](#usage)
 - [API Endpoints](#api-endpoints)
+- [Database Design and Scalability](#database-design-and-scalability)
 - [Pagination & Filtering](#pagination--filtering)
 - [Performance Optimizations](#performance-optimizations)
 - [Technologies](#technologies)
-- [Security](#security)
-- [Screenshots](#screenshots)
 - [Future Plans](#future-plans)
 - [Contributing](#contributing)
 - [License](#license)
 
 ## Features
 
-- **User Auth**: Users can authenticate using JWTs
-- **Subreddits**: Users can view and create subreddits
-- **Posts**: Users can post to specific subreddits
-- **Comments**: Users can comment on posts and other comments
-- **Voting**: Users can upvote and downvote posts and comments
-- **Hot, New, Top**: Filters allowing users to sort posts and comments
+- **User Auth**: Users can authenticate using JWTs.
+- **Subreddits**: Users can view and create subreddits.
+- **Posts**: Users can post to specific subreddits.
+- **Comments**: Users can comment on posts and other comments.
+- **Voting**: Users can upvote and downvote posts and comments.
+- **Filtering**: Users can sort posts and comments by "Hot," "New," and "Top."
 
 ## Highlights
 
-- **Efficient Data Fetching**: Uses `Promise.all` to handle multiple asynchronous queries, ensuring rapid data retrieval for posts and comments.
-- **Post Ranking**: Implements a sophisticated ranking algorithm with precomputed `rankingScore` and `netUpvotes` for "Hot," "New," and "Top" post/comment filters.
-- **Database Throughput**: The application is designed to handle heavy read/write loads with 50M DAU (Daily Active Users), 330M MAU (Monthly Active Users), and supports the following throughput:
-  - **8,000 Transactions per Second (TPS)** for reads (screen views)
-  - **5,500 TPS** for page views
-  - **1,000 TPS** for upvotes
-  - **10 TPS** for post creation
+- **Efficient Data Fetching**: Uses `Promise.all` to handle multiple asynchronous queries for posts and comments, reducing overall load time.
+- **Post Ranking**: Implements precomputed ranking scores (`rankingScore`, `netUpvotes`) to sort content efficiently based on "Hot," "New," and "Top" filters.
+- **Database Throughput**: The application is designed to handle heavy read/write loads and supports the following throughput:
+  - **8,000+ Transactions per Second (TPS)** for reads (screen views)
+  - **5,500+ TPS** for page views
+  - **1,000+ TPS** for upvotes
+  - **10+ TPS** for post creation
   - A MongoDB sharding strategy is employed to distribute data across clusters (Posts/Subreddits, Votes, Comments, Users), ensuring scalability and fault tolerance.
 - **Caching with Redis**: Implemented Redis for caching frequently accessed data (e.g., hot posts and comments) to further reduce load times and optimize performance.
-- **Pagination**:
-  - Posts and comments are paginated to enhance user experience and decrease load times.
-  - A reusable `PaginatedList` component on the frontend handles paginated views for different data entities (posts, comments, etc.).
-- **Recursive Comment Fetching**: Recursively fetches nested comments and replies on the server side, providing deep-threaded conversations.
-- **Filtering**: Supports dynamic filtering of posts and comments with different criteria like "Hot," "New," and "Top."
-- **Performance Enhancements**: Memoization through React's `useCallback` and `useMemo`, combined with Reselect's `createSelector` to reduce unnecessary re-renders and improve efficiency.
-- **Lazy Loading**: Uses React’s `Lazy` and `Suspense` for component lazy loading, optimizing initial load time.
-- **Version Upgrades & Security Fixes**: Migrated to the latest software versions with continuous vulnerability fixes.
+- **Recursive Comment Fetching**: Server-side logic recursively fetches deeply nested comment threads, enabling seamless user interactions with replies and discussions.
+- **Reusability**: Frontend components such as a `PaginatedList` can handle paginated views of different data (posts, comments, replies) for scalability.
+- **Version & Security Updates**: Code is regularly updated to the latest package versions, resolving security vulnerabilities.
+
+## Usage
+
+The application supports Reddit-like functionality, including:
+
+- Viewing, posting, and voting on posts.
+- Threaded commenting with replies.
+- Pagination and filtering of posts and comments, ranked using a custom algorithm for "Hot," "New," and "Top."
+
+## API Endpoints
+
+| Method | Endpoint                    | Description                                       |
+| ------ | --------------------------- | ------------------------------------------------- |
+| GET    | `/api/posts`                | Fetch all posts (supports pagination & filtering) |
+| POST   | `/api/posts`                | Creates a new post                                |
+| GET    | `/api/comments`             | Fetch top-level comments with pagination          |
+| POST   | `/api/comments`             | Creates a new comment                             |
+| GET    | `/api/comments/:id/replies` | Fetch replies to a specific comment               |
+| POST   | `/api/votes`                | Creates a vote on a comment or post               |
+
+## Database Design and Scalability
+
+### Current Setup
+
+The application currently uses a single MongoDB cluster managed by MongoDB Atlas with the following collections:
+
+- **Users**
+- **Posts**
+- **Subreddits**
+- **PostSubs** (a join table for posts and subreddits)
+- **Comments**
+- **Votes**
+
+### Sharding Strategy
+
+To prepare for scalability, I’m leveraging MongoDB’s built-in sharding features. For the traffic and workload outlined, sharding data across multiple clusters is crucial for scaling effectively. Here's the planned approach:
+
+- **Posts & Subreddits**: Will be moved to a dedicated cluster with sharding based on `subredditId`. This ensures the high volume of post reads and writes is balanced.
+- **Votes**: A separate cluster will handle vote data, partitioned by `postId`. With over 1,000 TPS for votes, this ensures fast, independent scaling.
+- **Comments**: Managed in its own cluster, sharded by `postId`, since comments heavily depend on the posts they belong to and can grow recursively.
+- **Users**: Stored in another cluster for user-related activities and data, sharded by `userId`.
+
+This design isolates different high-traffic components of the application, reducing potential bottlenecks and optimizing for the read-heavy nature of the app. Given MongoDB's flexibility, the solution will allow the system to scale linearly as the user base grows.
+
+---
+
+For example:
+
+```javascript
+// Sharding keys for each collection:
+
+db.posts.createIndex({ subredditId: 1 });
+db.votes.createIndex({ postId: 1 });
+db.comments.createIndex({ postId: 1 });
+db.users.createIndex({ userId: 1 });
+```
+
+Each collection is sharded on the appropriate keys to handle heavy traffic efficiently, preventing read/write contention across different aspects of the platform.
+
+## Pagination & Filtering
+
+The app supports several filtering and pagination strategies to optimize performance:
+
+- **Posts**:
+  - Posts can be filtered by `Hot`, `New`, and `Top` categories.
+  - Pagination relies on MongoDB query strategies (`.sort()`, `.limit()`), using precomputed scores for ranking.
+- **Comments**:
+  - Recursive server-side logic fetches nested comments, allowing deep-threaded conversations.
+  - Comments are paginated, with dynamic filtering for reply counts and voting activity.
+
+## Performance Optimizations
+
+To ensure the app performs efficiently even with high traffic, the following optimizations have been incorporated:
+
+- **Memoization**:
+  - Using `useCallback` and `useMemo` to minimize unnecessary re-renders.
+  - Leveraging Reselect’s `createSelector` to memoize `useSelector` calls in React.
+- **Efficient Querying**:
+
+  - `Promise.all` handles concurrent requests, improving response times when fetching multiple data sources.
+  - Mongoose’s `.lean()` is used to return lightweight, plain JavaScript objects, reducing memory overhead.
+
+- **Lazy Loading**:
+  - Components are lazy-loaded with `React.lazy()` and `Suspense`, improving initial page load times and reducing bandwidth consumption.
 
 ## Technologies
 
@@ -56,10 +138,16 @@ A full-stack web application built with the MERN stack (MongoDB, Express, React,
 - **Mongoose**: ORM for MongoDB, used for schema definitions and efficient query handling.
 - **JWT (JSON Web Tokens)**: Used for secure authentication of users.
 
-## Usage
+## Future Plans
 
-The application supports basic Reddit-like functionality, such as:
+- Refactor for deployment on AWS Lambda.
+- Explore using DynamoDB for further scalability and flexibility.
+- Implement server-side caching and load balancing.
+- Add CDN integration for faster content delivery.
+- Implement user profiles with vote and post history.
+- Expand validation and security features.
+- Overhaul frontend design for a smoother, more intuitive experience.
 
-- Creating, viewing, and voting on posts & comments.
-- Threaded commenting with replies.
-- Paginated listing of posts and comments with filters and ranking algorithm.
+## Spotted a bug?
+
+If you find a bug, please open an issue [here](https://github.com/ckane30691/oldReddit/issues).

@@ -5,6 +5,8 @@ const SubReddit = require('../../models/SubReddit');
 const Comment = require('../../models/Comment');
 const passport = require('passport');
 const validatePostInput = require('../../validation/post');
+const redisClient = require('../../config/redisClient')
+const { parseFilters, generateNextPageToken, easyParse } = require('../../utils/pagination');
 
 const router = express.Router();
 
@@ -12,13 +14,24 @@ module.exports = router;
 
 router.get('/', async (req, res) => {
 	try {
-		const { view = "Hot", subRedditId } = req.query?.filters;
-		const { limit = 10, pageToken = null } = req.query;
-		
+		const { subRedditId, view, limit, pageToken } = parseFilters(req.query, 'posts');
 		// Ensure subRedditId is provided
 		if (!subRedditId) {
 			return res.status(400).json({ error: "subRedditId is required" });
 		}
+
+		// Step 0: Check the cache
+		const cacheKey = `posts:${subRedditId}:${view}:${limit}:${JSON.stringify(pageToken)}`;
+		const cachedPosts = await redisClient.get(cacheKey);
+
+		if (cachedPosts) {
+			console.log('Cache hit for posts')
+			let { posts, nextPageToken } = easyParse(cachedPosts);
+			
+			return res.json({posts, nextPageToken})
+		}
+
+		// Cache miss: Fetch posts from MongoDB
 
 		// Step 1: Get postIds from PostSub based on subRedditId
 		const postSubs = await PostSub.find({ subId: subRedditId }).select('postId');
@@ -39,7 +52,7 @@ router.get('/', async (req, res) => {
             postsQuery = postsQuery.sort({ createdAt: -1 });
             // Pagination based on createdAt timestamp
             if (pageToken) {
-				const {createdAt} = pageToken;
+				const { createdAt } = easyParse(pageToken);
                 postsQuery = postsQuery.where('createdAt').lt(new Date(createdAt));
             }
 		} else if (view === 'Top') {
@@ -48,7 +61,7 @@ router.get('/', async (req, res) => {
 
             // Pagination based on netUpvotes with createdAt fallback
             if (pageToken) {	
-                const { netUpvotes, createdAt } = pageToken;
+                const { netUpvotes, createdAt } = easyParse(pageToken);
 
                 postsQuery = postsQuery.or([
                     { netUpvotes: { $lt: netUpvotes } },
@@ -62,7 +75,7 @@ router.get('/', async (req, res) => {
 
             // Pagination based on rankingScore with createdAt fallback
             if (pageToken) {
-                const { rankingScore, createdAt } = pageToken;
+                const { rankingScore, createdAt } = easyParse(pageToken);
                 postsQuery = postsQuery.or([
                     { rankingScore: { $lt: rankingScore } },
                     { rankingScore: rankingScore, createdAt: { $lt: new Date(createdAt) } }
@@ -76,23 +89,9 @@ router.get('/', async (req, res) => {
 		const posts = await postsQuery.exec();
 
 		// Step 6: Generate the next pageToken (if more posts are available)
-		let nextPageToken = null;
-		if (posts.length === Number(limit)) {
-			const lastPost = posts[posts.length - 1];
-            if (view === 'New') {
-                nextPageToken = JSON.stringify({createdAt: lastPost.createdAt.toISOString()});  // Timestamp for 'New'
-            } else if (view === 'Top') {
-                nextPageToken = JSON.stringify({
-                    netUpvotes: lastPost.netUpvotes,
-                    createdAt: lastPost.createdAt.toISOString()
-                });  // Upvotes and timestamp for 'Top'
-            } else if (view === 'Hot') {
-                nextPageToken = JSON.stringify({
-                    rankingScore: lastPost.rankingScore,
-                    createdAt: lastPost.createdAt.toISOString()
-                });  // RankingScore and timestamp for 'Hot'
-            }
-		}
+		let nextPageToken = generateNextPageToken(posts, limit, view);
+
+		redisClient.set(cacheKey, JSON.stringify({ posts, nextPageToken: nextPageToken }), 'EX', 60 * 5); // Cache for 5 minutes
 
 		return res.json({
 			posts,
@@ -137,6 +136,13 @@ router.post(
 				postId: newPost._id,
 				subId: sub._id
 			})
+
+			const cacheKey = `posts:${req.body.subRedditId}:*`; // Invalidate all related comment caches
+			const keys = await redisClient.keys(cacheKey);
+			for (let i = 0; i < keys.length; i++) {
+				let key = keys[i];
+				await redisClient.del(key);
+			}
 			
 			await Promise.all([newPost.save(), postSub.save()]);
 			res.json(newPost);

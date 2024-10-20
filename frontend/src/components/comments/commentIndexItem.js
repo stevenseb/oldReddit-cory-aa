@@ -24,7 +24,12 @@ export const CommentIndexItem = ({ comment }) => {
 
 			// Update state with newly loaded replies
 			setLoadedReplies((prevReplies) => [...prevReplies, ...res.data.replies]);
-			setReplyNextPageToken(res.data.replyNextPageToken);
+			console.log("RETURN FROM REPLIES: ", res.data)
+			// if (res.data.replyNextPageToken) {
+				setReplyNextPageToken(res.data.replyNextPageToken);
+			// } else if (res.data.nextPageToken) {
+			// 	setReplyNextPageToken(res.data.nextPageToken)
+			// }
 		} catch (error) {
 			console.error('Error loading more replies:', error);
 		} finally {

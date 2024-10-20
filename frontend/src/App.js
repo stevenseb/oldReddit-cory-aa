@@ -21,14 +21,13 @@ const composeComponents = (...components) => {
 	);
 };
 
-// TODO: Fix up styling and frontend mechanics
-// TODO: DELETE unused components
+// TODO: Add Redis
 // TODO: Deploy on render
 // TODO: Update resume and start applying
 // TODO: Refactor into microservices for lambda
 // TODO: Swap out MongoDB for DynamoDB
 // TODO: Set up Load Balancers
-// TODO: Client & Server side caching layers
+// TODO: Client side caching
 // TODO: Caching of pagetokens so you can keep your spot
 // TODO: Archiving old pages
 // TODO: Update pageranks with a cron job or something
@@ -37,6 +36,9 @@ const composeComponents = (...components) => {
 // TODO: Implement subscriptions to subreddits
 // TODO: Add filter for time on TOP
 // TODO: User Profiles including vote history
+// TODO: More styling
+// TODO: DELETE unused components
+// TODO: Limit depth on top level comments
 
 function App() {
 	return (

@@ -106,7 +106,7 @@ router.get('/', async (req, res) => {
             }
 		}
 
-		redisClient.set(cacheKey, JSON.stringify({ posts, nextPageToken: nextPageToken.createdAt }), 'EX', 60 * 5); // Cache for 5 minutes
+		redisClient.set(cacheKey, JSON.stringify({ posts, nextPageToken: nextPageToken?.createdAt || null }), 'EX', 60 * 5); // Cache for 5 minutes
 
 		return res.json({
 			posts,

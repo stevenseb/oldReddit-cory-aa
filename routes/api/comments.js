@@ -72,7 +72,8 @@ const fetchRepliesRecursive = async (parentCommentId, limit, pageToken) => {
 
 	// Handle pagination for replies
 	if (pageToken) {
-		const { rankingScore, createdAt } = pageToken;
+		const { rankingScore, createdAt } = typeof pageToken === 'string' ? JSON.parse(pageToken) : pageToken;
+		console.log("FETCH REPLIES RECURSIVE PAGE TOKEN: ", createdAt)
 		
 		query.$or = [
 			{ rankingScore: { $lt: rankingScore } },
@@ -126,7 +127,7 @@ router.get('/', async (req, res) => {
 		const nextPageToken = generateNextPageToken(topLevelComments, limit, view);
 
 		// Cache the results with an expiration time
-		redisClient.set(cacheKey, JSON.stringify({ comments: topLevelComments, nextPageToken: nextPageToken.createdAt }), 'EX', 60 * 5); // Cache for 5 minutes
+		redisClient.set(cacheKey, JSON.stringify({ comments: topLevelComments, nextPageToken: nextPageToken?.createdAt || null }), 'EX', 60 * 5); // Cache for 5 minutes
 
 		res.json({ comments: topLevelComments, nextPageToken });
 
@@ -154,7 +155,7 @@ router.get('/:commentId/replies', async (req, res) => {
 		const { replies, nextPageToken } = await fetchRepliesRecursive(commentId, limit, pageToken, 'Replies');
 
 		// Cache the replies with an expiration time
-		redisClient.set(cacheKey, JSON.stringify({ replies, nextPageToken: nextPageToken.createdAt }), 'EX', 60 * 5); // Cache for 5 minutes
+		redisClient.set(cacheKey, JSON.stringify({ replies, nextPageToken: nextPageToken?.createdAt || null }), 'EX', 60 * 5); // Cache for 5 minutes
 
 		res.json({ replies, nextPageToken });
 		
@@ -191,10 +192,6 @@ router.post(
 				let key = keys[i];
 				await redisClient.del(key);
 			}
-			// redisClient.keys(cacheKey, (err, keys) => {
-			// 	if (err) return console.error(err);
-			// 	keys.forEach(key => redisClient.del(key)); // Delete all matching keys
-			// });
 
 			res.json(comment);
 		} catch (errors) {

@@ -43,7 +43,7 @@ router.get('/', async (req, res) => {
 	try {
 		
 		const { postId, view, limit, pageToken } = parseFilters(req.query, 'comments');
-		const cacheKey = `comments:${postId}:${view}:${limit}:${pageToken?.createdAt || null}`; // Create a unique cache key
+		const cacheKey = `comments:${postId}:${view}:${limit}:${JSON.stringify(pageToken)}`; // Create a unique cache key
 		
 		// Check Redis cache first
         const cachedComments = await redisClient.get(cacheKey);
@@ -74,7 +74,7 @@ router.get('/', async (req, res) => {
 		const nextPageToken = generateNextPageToken(topLevelComments, limit, view);
 
 		// Cache the results with an expiration time
-		redisClient.set(cacheKey, JSON.stringify({ comments: topLevelComments, nextPageToken: nextPageToken?.createdAt || null }), 'EX', 60 * 5); // Cache for 5 minutes
+		redisClient.set(cacheKey, JSON.stringify({ comments: topLevelComments, nextPageToken }), 'EX', 60 * 5); // Cache for 5 minutes
 
 		res.json({ comments: topLevelComments, nextPageToken });
 
@@ -88,7 +88,7 @@ router.get('/:commentId/replies', async (req, res) => {
 	try {
 		const { limit = 5, pageToken = null } = easyParse(req.query);
 		const { commentId } = easyParse(req.params);
-		const cacheKey = `replies:${commentId}:${limit}:${pageToken?.createdAt || null}`; // Create a unique cache key for replies
+		const cacheKey = `replies:${commentId}:${limit}:${JSON.stringify(pageToken)}`; // Create a unique cache key for replies
 		
 		// Check Redis cache first
 		const cachedReplies = await redisClient.get(cacheKey);
@@ -96,16 +96,14 @@ router.get('/:commentId/replies', async (req, res) => {
 		if (cachedReplies) {
 			console.log('Cache hit for replies');
 			let { replies, nextPageToken } = easyParse(cachedReplies);
-			if (nextPageToken === null) {
-				nextPageToken = generateNextPageToken(replies, limit, 'Replies')
-			}
+			
 			return res.json({ replies, replyNextPageToken: nextPageToken }); // Return cached replies
 		}
 
 		// Cache miss: Fetch replies for the specified comment with pagination
 		const { replies, nextPageToken } = await fetchRepliesRecursive(commentId, limit, pageToken, 'Replies');
 		// Cache the replies with an expiration time
-		redisClient.set(cacheKey, JSON.stringify({ replies, nextPageToken: nextPageToken?.createdAt || null }), 'EX', 60 * 5); // Cache for 5 minutes
+		redisClient.set(cacheKey, JSON.stringify({ replies, nextPageToken: nextPageToken }), 'EX', 60 * 5); // Cache for 5 minutes
 
 		res.json({ replies, replyNextPageToken: nextPageToken });
 		

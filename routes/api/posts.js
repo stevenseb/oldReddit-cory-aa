@@ -27,9 +27,7 @@ router.get('/', async (req, res) => {
 		if (cachedPosts) {
 			console.log('Cache hit for posts')
 			let { posts, nextPageToken } = easyParse(cachedPosts);
-			if (nextPageToken === null) {
-				nextPageToken = generateNextPageToken(posts, limit, view)
-			}
+			
 			return res.json({posts, nextPageToken})
 		}
 
@@ -93,7 +91,7 @@ router.get('/', async (req, res) => {
 		// Step 6: Generate the next pageToken (if more posts are available)
 		let nextPageToken = generateNextPageToken(posts, limit, view);
 
-		redisClient.set(cacheKey, JSON.stringify({ posts, nextPageToken: JSON.stringify(nextPageToken) }), 'EX', 60 * 5); // Cache for 5 minutes
+		redisClient.set(cacheKey, JSON.stringify({ posts, nextPageToken: nextPageToken }), 'EX', 60 * 5); // Cache for 5 minutes
 
 		return res.json({
 			posts,

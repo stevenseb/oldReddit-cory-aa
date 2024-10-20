@@ -21,10 +21,8 @@ const composeComponents = (...components) => {
 	);
 };
 
-// TODO: Add Redis
-// TODO: Deploy on render
-// TODO: Update resume and start applying
 // TODO: Refactor into microservices for lambda
+// TODO: Update resume and start applying
 // TODO: Swap out MongoDB for DynamoDB
 // TODO: Set up Load Balancers
 // TODO: Client side caching

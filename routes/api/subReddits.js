@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
 	try {
 		let subReddits = req.query.filters
 			? await SubReddit.find()
-			: await SubReddit.find({ userId: req.query.filters }); //.sort({ date: -1 });
+			: await SubReddit.find({ userId: req.query.filters });
 
 		res.json(subReddits);
 	} catch (err) {

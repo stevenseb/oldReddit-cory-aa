@@ -1,9 +1,7 @@
 const mongoose = require('mongoose');
-const jsonwebtoken = require('jsonwebtoken');
-const keys = require('../../../config/keys');
+const authenticate = require('../../../utils/authenticate');
+const keys = require('../../../config/keys')
 mongoose.connect(keys.mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
-
-const User = require('../../../models/User');
 
 exports.handler = async (event) => {
   const token = event.headers.Authorization?.split(' ')[1];
@@ -16,8 +14,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const decoded = jsonwebtoken.verify(token, keys.secretOrKey);
-    const user = await User.findById(decoded.id);
+    const user = await authenticate(token);
 
     if (!user) {
       return {

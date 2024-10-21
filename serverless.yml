@@ -62,19 +62,31 @@ functions:
     handler: routes/api/auth/signup.handler
     events:
       - http:
-          path: signup
+          path: api/users/signup
           method: post
   login:
     handler: routes/api/auth/login.handler
     events:
       - http:
-          path: login
+          path: api/users/login
           method: post
   current:
     handler: routes/api/auth/current.handler
     events:
       - http:
-          path: current
+          path: api/users/current
+          method: get
+  createSubReddit:
+    handler: routes/api/subs/create.handler
+    events:
+      - http:
+          path: api/subReddits
+          method: post
+  getAllSubReddits:
+    handler: routes/api/subs/readAll.handler
+    events:
+      - http:
+          path: api/subReddits
           method: get
 #      - websocket: $connect
 #      - s3: ${env:BUCKET}

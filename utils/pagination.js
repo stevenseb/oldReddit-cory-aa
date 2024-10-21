@@ -1,23 +1,22 @@
 // Pagination Helpers
 const easyParse = (item) => {
-    return typeof item === 'string' ? JSON.parse(item) : item;
+	return typeof item === 'string' ? JSON.parse(item) : item;
 }
 
 // Helper function to parse query filters
 const parseFilters = (query, entityName) => {
-    if (entityName === 'comments') {
-        const { postId, view = 'Hot' } = query?.filters || '{}';
-        const { limit = 10, pageToken = null } = query;
-        return { postId, view, limit, pageToken };
-    } else { // posts
-        const { subRedditId, view = 'Hot' } = query?.filters || '{}';
-        const { limit = 10, pageToken = null } = query;
-        return { subRedditId, view, limit, pageToken };
-    }
+	if (entityName === 'comments') {
+		const { postId, view = 'Hot' } = query?.filters || '{}';
+		const { limit = 10, pageToken = null } = query;
+		return { postId, view, limit, pageToken };
+	} else { // posts
+		const { subRedditId, view = 'Hot' } = query?.filters || '{}';
+		const { limit = 10, pageToken = null } = query;
+		return { subRedditId, view, limit, pageToken };
+	}
 };
 
-// Helper function to build the query and sort options based on the view
-const buildQueryAndSort = (postId, view, pageToken) => {
+const buildCommentQueryAndSort = (postId, view, pageToken) => {
 	let query = { postId, parentCommentId: null }; // Fetch only top-level comments
 	let sortOption = {};
 
@@ -26,15 +25,15 @@ const buildQueryAndSort = (postId, view, pageToken) => {
 		if (pageToken) {
 			const { rankingScore, createdAt } = pageToken;
 			query.$or = [
-				{ rankingScore: {$lt: rankingScore} },
-				{ rankingScore, createdAt: {$lt: new Date(createdAt)} }
+				{ rankingScore: { $lt: rankingScore } },
+				{ rankingScore, createdAt: { $lt: new Date(createdAt) } }
 			];
 		}
-	} else if(view === "New") {
+	} else if (view === "New") {
 		sortOption = { createdAt: -1 };
 		if (pageToken) {
 			const { createdAt } = pageToken;
-			query.createdAt =  {$lt: new Date(createdAt)} 
+			query.createdAt = { $lt: new Date(createdAt) }
 		}
 	} else if (view === 'Top') {
 		sortOption = { netUpvotes: -1, createdAt: -1 };
@@ -48,6 +47,39 @@ const buildQueryAndSort = (postId, view, pageToken) => {
 	}
 
 	return { query, sortOption };
+};
+
+const buildPostsQuery = (postIds, view, pageToken) => {
+	let postsQuery = Post.find({ _id: { $in: postIds } });
+
+	// Apply sorting based on the view
+	if (view === 'New') {
+		postsQuery = postsQuery.sort({ createdAt: -1 });
+		if (pageToken) {
+			const { createdAt } = easyParse(pageToken);
+			postsQuery = postsQuery.where('createdAt').lt(new Date(createdAt));
+		}
+	} else if (view === 'Top') {
+		postsQuery = postsQuery.sort({ netUpvotes: -1, createdAt: -1 });
+		if (pageToken) {
+			const { netUpvotes, createdAt } = easyParse(pageToken);
+			postsQuery = postsQuery.or([
+				{ netUpvotes: { $lt: netUpvotes } },
+				{ netUpvotes, createdAt: { $lt: new Date(createdAt) } }
+			]);
+		}
+	} else {
+		postsQuery = postsQuery.sort({ rankingScore: -1, createdAt: -1 });
+		if (pageToken) {
+			const { rankingScore, createdAt } = easyParse(pageToken);
+			postsQuery = postsQuery.or([
+				{ rankingScore: { $lt: rankingScore } },
+				{ rankingScore, createdAt: { $lt: new Date(createdAt) } }
+			]);
+		}
+	}
+
+	return postsQuery;
 };
 
 // Helper function to generate the nextPageToken for pagination
@@ -67,8 +99,9 @@ const generateNextPageToken = (items, limit, view) => {
 };
 
 module.exports = {
-    easyParse,
-    parseFilters,
-    buildQueryAndSort,
-    generateNextPageToken
+	easyParse,
+	parseFilters,
+	buildCommentQueryAndSort,
+	buildPostsQuery,
+	generateNextPageToken
 }

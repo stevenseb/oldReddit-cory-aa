@@ -3,7 +3,7 @@ const Comment = require('../../models/Comment');
 const passport = require('passport');
 const validateCommentInput = require('../../validation/comment');
 const redisClient = require('../../config/redisClient')
-const { parseFilters, buildQueryAndSort, generateNextPageToken, easyParse } = require('../../utils/pagination');
+const { parseFilters, buildCommentQueryAndSort, generateNextPageToken, easyParse } = require('../../utils/pagination');
 
 const router = express.Router();
 
@@ -17,12 +17,12 @@ const fetchRepliesRecursive = async (parentCommentId, limit, pageToken) => {
 	// Handle pagination for replies
 	if (pageToken) {
 		const { rankingScore, createdAt } = easyParse(pageToken);
-		
+
 		query.$or = [
 			{ rankingScore: { $lt: rankingScore } },
 			{ rankingScore: rankingScore, createdAt: { $lt: new Date(createdAt) } }
 		]
-			
+
 	}
 
 	const replies = await Comment.find(query).sort(sortOption).limit(parseInt(limit)).lean();
@@ -35,30 +35,30 @@ const fetchRepliesRecursive = async (parentCommentId, limit, pageToken) => {
 	}
 
 	const nextPageToken = generateNextPageToken(replies, limit, 'Replies');
-	
+
 	return { replies, nextPageToken };
 };
 
 router.get('/', async (req, res) => {
 	try {
-		
+
 		const { postId, view, limit, pageToken } = parseFilters(req.query, 'comments');
 		const cacheKey = `comments:${postId}:${view}:${limit}:${JSON.stringify(pageToken)}`; // Create a unique cache key
-		
+
 		// Check Redis cache first
-        const cachedComments = await redisClient.get(cacheKey);
-		
-        if (cachedComments) {
-            console.log('Cache hit for comments');
+		const cachedComments = await redisClient.get(cacheKey);
+
+		if (cachedComments) {
+			console.log('Cache hit for comments');
 			let { comments, nextPageToken } = easyParse(cachedComments);
-			if(nextPageToken === null) {
+			if (nextPageToken === null) {
 				nextPageToken = generateNextPageToken(comments, limit, view);
 			}
-            return res.json({comments, nextPageToken});
-        }
-	
+			return res.json({ comments, nextPageToken });
+		}
+
 		// Cache miss: Fetch from MongoDB
-		const { query, sortOption } = buildQueryAndSort(postId, view, pageToken);
+		const { query, sortOption } = buildCommentQueryAndSort(postId, view, pageToken);
 		const topLevelComments = await Comment.find(query).sort(sortOption).limit(parseInt(limit)).lean();
 
 		// Limit replies per top-level comment
@@ -89,14 +89,14 @@ router.get('/:commentId/replies', async (req, res) => {
 		const { limit = 5, pageToken = null } = easyParse(req.query);
 		const { commentId } = easyParse(req.params);
 		const cacheKey = `replies:${commentId}:${limit}:${JSON.stringify(pageToken)}`; // Create a unique cache key for replies
-		
+
 		// Check Redis cache first
 		const cachedReplies = await redisClient.get(cacheKey);
-		
+
 		if (cachedReplies) {
 			console.log('Cache hit for replies');
 			let { replies, nextPageToken } = easyParse(cachedReplies);
-			
+
 			return res.json({ replies, replyNextPageToken: nextPageToken }); // Return cached replies
 		}
 
@@ -106,7 +106,7 @@ router.get('/:commentId/replies', async (req, res) => {
 		redisClient.set(cacheKey, JSON.stringify({ replies, nextPageToken: nextPageToken }), 'EX', 60 * 5); // Cache for 5 minutes
 
 		res.json({ replies, replyNextPageToken: nextPageToken });
-		
+
 	} catch (err) {
 		console.error(err);
 		res.status(404).json({ noRepliesFound: 'No replies yet' });

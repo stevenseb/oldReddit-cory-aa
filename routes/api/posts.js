@@ -2,11 +2,10 @@ const express = require('express');
 const Post = require('../../models/Post');
 const PostSub = require('../../models/PostSub');
 const SubReddit = require('../../models/SubReddit');
-const Comment = require('../../models/Comment');
 const passport = require('passport');
 const validatePostInput = require('../../validation/post');
 const redisClient = require('../../config/redisClient')
-const { parseFilters, generateNextPageToken, easyParse } = require('../../utils/pagination');
+const { parseFilters, generateNextPageToken, easyParse, buildPostsQuery } = require('../../utils/pagination');
 
 const router = express.Router();
 
@@ -27,8 +26,8 @@ router.get('/', async (req, res) => {
 		if (cachedPosts) {
 			console.log('Cache hit for posts')
 			let { posts, nextPageToken } = easyParse(cachedPosts);
-			
-			return res.json({posts, nextPageToken})
+
+			return res.json({ posts, nextPageToken })
 		}
 
 		// Cache miss: Fetch posts from MongoDB
@@ -45,45 +44,46 @@ router.get('/', async (req, res) => {
 		const postIds = postSubs.map(postSub => postSub.postId);
 
 		// Step 2: Query the Post collection using the postIds
-		let postsQuery = Post.find({ _id: { $in: postIds } });
+		let postsQuery = buildPostsQuery(postIds, view, pageToken);
+		// let postsQuery = Post.find({ _id: { $in: postIds } });
 		// Step 3: Apply sorting based on the view filter
-		if (view === 'New') {
-			// Sort by creation date (newest first) and paginate with createdAt
-            postsQuery = postsQuery.sort({ createdAt: -1 });
-            // Pagination based on createdAt timestamp
-            if (pageToken) {
-				const { createdAt } = easyParse(pageToken);
-                postsQuery = postsQuery.where('createdAt').lt(new Date(createdAt));
-            }
-		} else if (view === 'Top') {
-			 // Sort by netUpvotes with createdAt as a secondary sort (for tie-breaking)
-            postsQuery = postsQuery.sort({ netUpvotes: -1, createdAt: -1 });
+		// if (view === 'New') {
+		// 	// Sort by creation date (newest first) and paginate with createdAt
+		// 	postsQuery = postsQuery.sort({ createdAt: -1 });
+		// 	// Pagination based on createdAt timestamp
+		// 	if (pageToken) {
+		// 		const { createdAt } = easyParse(pageToken);
+		// 		postsQuery = postsQuery.where('createdAt').lt(new Date(createdAt));
+		// 	}
+		// } else if (view === 'Top') {
+		// 	// Sort by netUpvotes with createdAt as a secondary sort (for tie-breaking)
+		// 	postsQuery = postsQuery.sort({ netUpvotes: -1, createdAt: -1 });
 
-            // Pagination based on netUpvotes with createdAt fallback
-            if (pageToken) {	
-                const { netUpvotes, createdAt } = easyParse(pageToken);
+		// 	// Pagination based on netUpvotes with createdAt fallback
+		// 	if (pageToken) {
+		// 		const { netUpvotes, createdAt } = easyParse(pageToken);
 
-                postsQuery = postsQuery.or([
-                    { netUpvotes: { $lt: netUpvotes } },
-                    { netUpvotes: netUpvotes, createdAt: { $lt: new Date(createdAt) } }
-                ]);
-            }
-		} else {
-			// Default to Hot
-			// Sort by precomputed rankingScore with createdAt as a secondary sort
-            postsQuery = postsQuery.sort({ rankingScore: -1, createdAt: -1 });
+		// 		postsQuery = postsQuery.or([
+		// 			{ netUpvotes: { $lt: netUpvotes } },
+		// 			{ netUpvotes: netUpvotes, createdAt: { $lt: new Date(createdAt) } }
+		// 		]);
+		// 	}
+		// } else {
+		// 	// Default to Hot
+		// 	// Sort by precomputed rankingScore with createdAt as a secondary sort
+		// 	postsQuery = postsQuery.sort({ rankingScore: -1, createdAt: -1 });
 
-            // Pagination based on rankingScore with createdAt fallback
-            if (pageToken) {
-                const { rankingScore, createdAt } = easyParse(pageToken);
-                postsQuery = postsQuery.or([
-                    { rankingScore: { $lt: rankingScore } },
-                    { rankingScore: rankingScore, createdAt: { $lt: new Date(createdAt) } }
-                ]);
-            }
-		}
+		// 	// Pagination based on rankingScore with createdAt fallback
+		// 	if (pageToken) {
+		// 		const { rankingScore, createdAt } = easyParse(pageToken);
+		// 		postsQuery = postsQuery.or([
+		// 			{ rankingScore: { $lt: rankingScore } },
+		// 			{ rankingScore: rankingScore, createdAt: { $lt: new Date(createdAt) } }
+		// 		]);
+		// 	}
+		// }
 		// Step 4: Apply the limit to the query
-        postsQuery = postsQuery.limit(Number(limit));
+		postsQuery = postsQuery.limit(Number(limit));
 
 		// Step 5: Execute the query and return the posts
 		const posts = await postsQuery.exec();
@@ -143,7 +143,7 @@ router.post(
 				let key = keys[i];
 				await redisClient.del(key);
 			}
-			
+
 			await Promise.all([newPost.save(), postSub.save()]);
 			res.json(newPost);
 		} catch (errors) {

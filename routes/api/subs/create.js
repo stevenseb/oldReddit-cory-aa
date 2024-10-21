@@ -22,8 +22,8 @@ exports.handler = async (event) => {
 
         if (!user) {
             return {
-                statusCode: 404,
-                body: JSON.stringify({ message: 'User not found' }),
+                statusCode: 401,
+                body: JSON.stringify({ message: 'Invalid token' }),
             };
         }
 

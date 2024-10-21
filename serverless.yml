@@ -88,6 +88,12 @@ functions:
       - http:
           path: api/subReddits
           method: get
+  vote:
+    handler: routes/api/vote.handler
+    events:
+      - http:
+          path: api/votes
+          method: post
 #      - websocket: $connect
 #      - s3: ${env:BUCKET}
 #      - schedule: rate(10 minutes)

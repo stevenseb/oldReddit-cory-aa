@@ -1,0 +1,13 @@
+{
+    "headers": {
+        "Authorization": null
+    },
+    "queryStringParameters": {
+        "filters": {
+            "subRedditId": "670cbd38c922fbd4063eff45",
+            "view": "Hot",
+            "limit": "10",
+            "pageToken": null
+        }
+    }
+}

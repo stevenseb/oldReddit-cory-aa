@@ -94,6 +94,12 @@ functions:
       - http:
           path: api/votes
           method: post
+  getAllPosts:
+    handler: routes/api/posts/readAll.handler
+    events:
+      - http:
+          path: api/posts
+          method: get
 #      - websocket: $connect
 #      - s3: ${env:BUCKET}
 #      - schedule: rate(10 minutes)

@@ -23,6 +23,7 @@ const composeComponents = (...components) => {
 
 // TODO: Refactor into microservices for lambda
 // TODO: Update resume and start applying
+// TODO: Update connections to chcek if already connected
 // TODO: Swap out MongoDB for DynamoDB
 // TODO: Set up Load Balancers
 // TODO: Client side caching
@@ -43,7 +44,7 @@ function App() {
 		<div className="App">
 			<BrowserRouter>
 				<SubRedditIndex />
-				
+
 				<header className="App-header">
 					<Header />
 				</header>

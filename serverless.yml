@@ -100,6 +100,12 @@ functions:
       - http:
           path: api/posts
           method: get
+  getOnePost:
+    handler: routes/api/posts/readOne.handler
+    events:
+      - http:
+          path: api/posts/{id}
+          method: get
 #      - websocket: $connect
 #      - s3: ${env:BUCKET}
 #      - schedule: rate(10 minutes)

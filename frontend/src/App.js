@@ -22,10 +22,10 @@ const composeComponents = (...components) => {
 };
 
 // TODO: Refactor into microservices for lambda
+// TODO: Refactor comments to precompute paths for efficient querying
 // TODO: Update resume and start applying
 // TODO: Update connections to chcek if already connected
 // TODO: Swap out MongoDB for DynamoDB
-// TODO: Set up Load Balancers
 // TODO: Client side caching
 // TODO: Caching of pagetokens so you can keep your spot
 // TODO: Archiving old pages

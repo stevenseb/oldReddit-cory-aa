@@ -106,6 +106,12 @@ functions:
       - http:
           path: api/posts/{id}
           method: get
+  createPost:
+    handler: routes/api/posts/create.handler
+    events:
+      - http:
+          path: api/posts
+          method: post
 #      - websocket: $connect
 #      - s3: ${env:BUCKET}
 #      - schedule: rate(10 minutes)

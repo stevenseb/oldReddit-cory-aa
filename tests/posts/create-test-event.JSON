@@ -1,0 +1,10 @@
+{
+    "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3MTU3MzQzYjNlMDVlMTAyYTZmMTU3NiIsInVzZXJuYW1lIjoiRGVtbyIsImVtYWlsIjoiZGVtb0BkZW1vLmNvbSIsImlhdCI6MTcyOTYzODA2MCwiZXhwIjoxNzI5NjQxNjYwfQ.D7GGrRINPhFkO_TtIpmGPeXwC6xOU8J5QPFpFqvvd8w"
+    },
+    "body": {
+        "subId": "670cbd38c922fbd4063eff45",
+        "title": "Brand New Post!",
+        "body": "First of its kind"
+    }
+}

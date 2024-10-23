@@ -10,7 +10,7 @@ const Comment = require('../../models/Comment')
 const Vote = require('../../models/Vote');
 
 exports.handler = async (event) => {
-    const token = event.headers.Authorization?.split(' ')[1];
+    const token = easyParse(event).headers.authorization?.split(' ')[1];
 
     if (!token) {
         return {

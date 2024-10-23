@@ -4,6 +4,7 @@ const keys = require('../../../config/keys')
 const redisClient = require('../../../config/redisClient')
 const validatePostInput = require('../../../validation/post')
 mongoose.connect(keys.mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
+const { easyParse } = require('../../../utils/pagination');
 
 const PostSub = require('../../../models/PostSub');
 const Post = require('../../../models/Post');
@@ -14,7 +15,7 @@ const Post = require('../../../models/Post');
 
 exports.handler = async (event) => {
     
-	const token = event.headers.Authorization?.split(' ')[1];
+	const token = easyParse(event).headers.authorization?.split(' ')[1];
 
     if (!token) {
         return {
@@ -33,7 +34,9 @@ exports.handler = async (event) => {
             };
         }
 
-        const { errors, isValid } = validatePostInput(event.body);
+        const body = easyParse(event.body);
+
+        const { errors, isValid } = validatePostInput(body);
         if (!isValid) {
             return {
                 statusCode: 400,
@@ -43,16 +46,16 @@ exports.handler = async (event) => {
 
         const newPost = new Post({
             userId: user._id,
-            title: event.body.title,
-            url: event.body.url,
-            body: event.body.body,
+            title: body.title,
+            url: body.url,
+            body: body.body,
         });
         const postSub = new PostSub({
             postId: newPost._id,
-            subId: event.body.subId
+            subId: body.subId
         })
 
-        const cacheKey = `posts:${event.body.subId}:*`; // Invalidate all related comment caches
+        const cacheKey = `posts:${body.subId}:*`; // Invalidate all related comment caches
         const keys = await redisClient.keys(cacheKey);
         for (let i = 0; i < keys.length; i++) {
             let key = keys[i];

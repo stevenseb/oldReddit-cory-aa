@@ -8,7 +8,7 @@ mongoose.connect(keys.mongoURI, { useNewUrlParser: true, useUnifiedTopology: tru
 const SubReddit = require('../../../models/SubReddit');
 
 exports.handler = async (event) => {
-    const token = event.headers.Authorization?.split(' ')[1];
+    const token = easyParse(event).headers.authorization?.split(' ')[1];
 
     if (!token) {
         return {
@@ -27,8 +27,10 @@ exports.handler = async (event) => {
             };
         }
 
-        const { errors, isValid } = validateSubRedditInput(easyParse(event.body));
-        console.log(event.body)
+        const body = easyParse(event.body);
+
+        const { errors, isValid } = validateSubRedditInput(body);
+        
         if (!isValid) {
             return {
                 statusCode: 400,
@@ -38,8 +40,8 @@ exports.handler = async (event) => {
 
         const newSubReddit = new SubReddit({
             moderatorId: user._id,
-            title: event.body.title,
-            desc: event.body.desc,
+            title: body.title,
+            desc: body.desc,
         });
 
         await newSubReddit.save();

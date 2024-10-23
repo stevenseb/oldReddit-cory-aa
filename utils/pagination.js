@@ -19,8 +19,10 @@ const formatPageToken = (query) => {
 // Helper function to parse query filters
 const parseFilters = (query, entityName) => {
 	if (entityName === 'comments') {
-		const { postId, view = 'Hot' } = query?.filters || '{}';
-		const { limit = 10, pageToken = null } = query;
+		const postId = query['filters[postId]']; 
+		const view = query['filters[view]'] || 'Hot';
+		const limit = query['limit'] || 10;
+		const pageToken = formatPageToken(query);
 		return { postId, view, limit, pageToken };
 	} else { // posts
 		const subRedditId = query['filters[subRedditId]'];

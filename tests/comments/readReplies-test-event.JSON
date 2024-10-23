@@ -1,0 +1,10 @@
+{
+    "headers": {
+        "Authorization": null
+    },
+    "path": "/api/comments/67145cd679626bd271b6f4f5/replies",
+    "pathParameters": {
+    "commentId": "67145cd679626bd271b6f4f5"
+    },
+    "queryStringParameters": null
+}

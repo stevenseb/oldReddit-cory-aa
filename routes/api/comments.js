@@ -3,41 +3,11 @@ const Comment = require('../../models/Comment');
 const passport = require('passport');
 const validateCommentInput = require('../../validation/comment');
 const redisClient = require('../../config/redisClient')
-const { parseFilters, buildCommentQueryAndSort, generateNextPageToken, easyParse } = require('../../utils/pagination');
+const { parseFilters, buildCommentQueryAndSort, generateNextPageToken, easyParse, fetchRepliesRecursive } = require('../../utils/pagination');
 
 const router = express.Router();
 
 module.exports = router;
-
-// Helper function to fetch replies with pagination
-const fetchRepliesRecursive = async (parentCommentId, limit, pageToken) => {
-	let query = { parentCommentId };
-	let sortOption = { rankingScore: -1, createdAt: -1 }; // Replies sorted by ranking and creation time
-
-	// Handle pagination for replies
-	if (pageToken) {
-		const { rankingScore, createdAt } = easyParse(pageToken);
-
-		query.$or = [
-			{ rankingScore: { $lt: rankingScore } },
-			{ rankingScore: rankingScore, createdAt: { $lt: new Date(createdAt) } }
-		]
-
-	}
-
-	const replies = await Comment.find(query).sort(sortOption).limit(parseInt(limit)).lean();
-
-	// Fetch replies for each reply recursively
-	for (const reply of replies) {
-		const { replies: childReplies, nextPageToken: childReplyPageToken } = await fetchRepliesRecursive(reply._id, limit, null);
-		reply.replies = childReplies; // Attach child replies
-		reply.replyNextPageToken = childReplyPageToken; // Attach pagination token for replies of replies
-	}
-
-	const nextPageToken = generateNextPageToken(replies, limit, 'Replies');
-
-	return { replies, nextPageToken };
-};
 
 router.get('/', async (req, res) => {
 	try {

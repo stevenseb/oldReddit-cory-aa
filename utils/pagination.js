@@ -16,6 +16,36 @@ const parseFilters = (query, entityName) => {
 	}
 };
 
+// Helper function to fetch replies with pagination
+const fetchRepliesRecursive = async (parentCommentId, limit, pageToken) => {
+	let query = { parentCommentId };
+	let sortOption = { rankingScore: -1, createdAt: -1 }; // Replies sorted by ranking and creation time
+
+	// Handle pagination for replies
+	if (pageToken) {
+		const { rankingScore, createdAt } = easyParse(pageToken);
+
+		query.$or = [
+			{ rankingScore: { $lt: rankingScore } },
+			{ rankingScore: rankingScore, createdAt: { $lt: new Date(createdAt) } }
+		]
+
+	}
+
+	const replies = await Comment.find(query).sort(sortOption).limit(parseInt(limit)).lean();
+
+	// Fetch replies for each reply recursively
+	for (const reply of replies) {
+		const { replies: childReplies, nextPageToken: childReplyPageToken } = await fetchRepliesRecursive(reply._id, limit, null);
+		reply.replies = childReplies; // Attach child replies
+		reply.replyNextPageToken = childReplyPageToken; // Attach pagination token for replies of replies
+	}
+
+	const nextPageToken = generateNextPageToken(replies, limit, 'Replies');
+
+	return { replies, nextPageToken };
+};
+
 const buildCommentQueryAndSort = (postId, view, pageToken) => {
 	let query = { postId, parentCommentId: null }; // Fetch only top-level comments
 	let sortOption = {};
@@ -101,6 +131,7 @@ const generateNextPageToken = (items, limit, view) => {
 module.exports = {
 	easyParse,
 	parseFilters,
+	fetchRepliesRecursive,
 	buildCommentQueryAndSort,
 	buildPostsQuery,
 	generateNextPageToken

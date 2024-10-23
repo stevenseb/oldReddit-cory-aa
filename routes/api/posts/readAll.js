@@ -16,7 +16,6 @@ exports.handler = async (event) => {
         const queryParams = event.queryStringParameters || {};
         const { subRedditId, view, limit, pageToken } = parseFilters(queryParams, 'posts');
 
-        // Ensure subRedditId is provided
         if (!subRedditId) {
             return {
                 statusCode: 400,

@@ -118,6 +118,12 @@ functions:
       - http:
           path: api/comments
           method: post
+  readAllComments:
+    handler: routes/api/comments/readAll.handler
+    events:
+      - http:
+          path: api/comments
+          method: get
 #      - websocket: $connect
 #      - s3: ${env:BUCKET}
 #      - schedule: rate(10 minutes)

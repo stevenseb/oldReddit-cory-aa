@@ -1,9 +1,9 @@
 const express = require('express');
-const Comment = require('../../models/Comment');
+const Comment = require('../../../models/Comment');
 const passport = require('passport');
-const validateCommentInput = require('../../validation/comment');
-const redisClient = require('../../config/redisClient')
-const { parseFilters, buildCommentQueryAndSort, generateNextPageToken, easyParse, fetchRepliesRecursive } = require('../../utils/pagination');
+const validateCommentInput = require('../../../validation/comment');
+const redisClient = require('../../../config/redisClient')
+const { parseFilters, buildCommentQueryAndSort, generateNextPageToken, easyParse, fetchRepliesRecursive } = require('../../../utils/pagination');
 
 const router = express.Router();
 

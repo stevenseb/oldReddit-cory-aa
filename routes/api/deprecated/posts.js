@@ -1,11 +1,11 @@
 const express = require('express');
-const Post = require('../../models/Post');
-const PostSub = require('../../models/PostSub');
-const SubReddit = require('../../models/SubReddit');
+const Post = require('../../../models/Post');
+const PostSub = require('../../../models/PostSub');
+const SubReddit = require('../../../models/SubReddit');
 const passport = require('passport');
-const validatePostInput = require('../../validation/post');
-const redisClient = require('../../config/redisClient')
-const { parseFilters, generateNextPageToken, easyParse, buildPostsQuery } = require('../../utils/pagination');
+const validatePostInput = require('../../../validation/post');
+const redisClient = require('../../../config/redisClient')
+const { parseFilters, generateNextPageToken, easyParse, buildPostsQuery } = require('../../../utils/pagination');
 
 const router = express.Router();
 

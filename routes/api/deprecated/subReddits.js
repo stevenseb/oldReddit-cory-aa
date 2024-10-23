@@ -1,8 +1,8 @@
 const express = require('express');
-const SubReddit = require('../../models/SubReddit');
-const UserSub = require('../../models/UserSub');
+const SubReddit = require('../../../models/SubReddit');
+const UserSub = require('../../../models/UserSub');
 const passport = require('passport');
-const validateSubRedditInput = require('../../validation/subReddit');
+const validateSubRedditInput = require('../../../validation/subReddit');
 
 const router = express.Router();
 

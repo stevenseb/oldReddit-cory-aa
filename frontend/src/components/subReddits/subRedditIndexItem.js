@@ -14,7 +14,7 @@ export const SubRedditIndexItem = ({ subReddit }) => {
 		<li>
 			<h1>
 				<Link to={`/subReddits/${subReddit._id}`}>
-					{subReddit.title.toUpperCase()}
+					{subReddit?.title?.toUpperCase()}
 				</Link>{' '}
 				-
 			</h1>

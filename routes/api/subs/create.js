@@ -48,9 +48,7 @@ exports.handler = async (event) => {
 
         return {
             statusCode: 200,
-            body: JSON.stringify({
-                newSubReddit
-            })
+            body: JSON.stringify(newSubReddit)
         }
 
     } catch (error) {

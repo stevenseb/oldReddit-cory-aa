@@ -13,8 +13,15 @@ const PostSub = require('../../../models/PostSub');
 exports.handler = async (event) => {
     try {
         // Parse query parameters from Lambda event
-        const queryParams = event.queryStringParameters || {};
+        const queryParams = easyParse(event.queryStringParameters) || {};
         const { subRedditId, view, limit, pageToken } = parseFilters(queryParams, 'posts');
+        
+        //tomorrow refactor queryParams so you get the stuff correctly
+        console.log("params: ",queryParams)
+        console.log("token: ",pageToken)
+        console.log("view: ",view)
+        console.log("limit: ",limit)
+        console.log("subId: ",subRedditId)
 
         if (!subRedditId) {
             return {

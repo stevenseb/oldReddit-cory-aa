@@ -1,7 +1,19 @@
 const Comment = require('../models/Comment')
+const Post = require('../models/Post')
 // Pagination Helpers
 const easyParse = (item) => {
 	return typeof item === 'string' ? JSON.parse(item) : item;
+}
+
+const formatPageToken = (query) => {
+	const pageToken = {};
+	let createdAt = query['pageToken[createdAt]']
+	let rankingScore = query['pageToken[rankingScore]']
+	let netUpvotes = query['pageToken[netUpvotes]']
+	if (createdAt) pageToken.createdAt = createdAt
+	if (rankingScore) pageToken.rankingScore = rankingScore
+	if (netUpvotes) pageToken.netUpvotes = netUpvotes
+	return Object.keys(pageToken).length ? pageToken : null;
 }
 
 // Helper function to parse query filters
@@ -11,8 +23,10 @@ const parseFilters = (query, entityName) => {
 		const { limit = 10, pageToken = null } = query;
 		return { postId, view, limit, pageToken };
 	} else { // posts
-		const { subRedditId, view = 'Hot' } = query?.filters || '{}';
-		const { limit = 10, pageToken = null } = query;
+		const subRedditId = query['filters[subRedditId]'];
+		const view = query['filters[view]'] || 'Hot';
+		const limit = query['limit'] || 10;
+		const pageToken = formatPageToken(query);
 		return { subRedditId, view, limit, pageToken };
 	}
 };

@@ -12,7 +12,7 @@ export const SubRedditIndex = (props) => {
 
 	useEffect(() => {
 		const fetchSubs = async () => {
-			let res = await dispatch(fetchSubReddits(user.id));
+			let res = await dispatch(fetchSubReddits());
 			if (res.type === 'subReddits/fetchAll/fulfilled') {
 				setHooksReady(true);
 			}

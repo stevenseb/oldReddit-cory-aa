@@ -36,8 +36,8 @@ export const CommentForm = (props) => {
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
-		const { postId, parentCommentId, onNewReply } = props;
-		let comment = { postId, body, parentCommentId };
+		const { postId, parentCommentId, onNewReply, parentPath } = props;
+		let comment = { postId, body, parentCommentId, parentPath };
 
 		let res = await dispatch(createComment(comment));
 		if ((res.type = 'comments/create/fulfilled')) {
@@ -45,21 +45,21 @@ export const CommentForm = (props) => {
 		}
 
 		if (onNewReply) {
-				onNewReply(res.payload);
-			}
+			onNewReply(res.payload);
+		}
 	};
 
 	return (
-		<form className='comment-form' onSubmit={handleSubmit}>
+		<form className="comment-form" onSubmit={handleSubmit}>
 			{/* <div className="errors">{renderErrors()}</div> */}
 			<textarea
 				required
-				className='comment-text-area'
+				className="comment-text-area"
 				type="text"
 				value={body}
 				onChange={update('body')}
 			/>
-			<input className='comment-submit' type="submit" value="Save" />
+			<input className="comment-submit" type="submit" value="Save" />
 		</form>
 	);
 };

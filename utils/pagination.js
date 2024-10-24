@@ -1,30 +1,32 @@
-const Comment = require('../models/Comment')
-const Post = require('../models/Post')
+const Comment = require('../models/Comment');
+const Post = require('../models/Post');
+const mongoose = require('mongoose');
 // Pagination Helpers
 const easyParse = (item) => {
 	return typeof item === 'string' ? JSON.parse(item) : item;
-}
+};
 
 const formatPageToken = (query) => {
 	const pageToken = {};
-	let createdAt = query['pageToken[createdAt]']
-	let rankingScore = query['pageToken[rankingScore]']
-	let netUpvotes = query['pageToken[netUpvotes]']
-	if (createdAt) pageToken.createdAt = createdAt
-	if (rankingScore) pageToken.rankingScore = rankingScore
-	if (netUpvotes) pageToken.netUpvotes = netUpvotes
+	let createdAt = query['pageToken[createdAt]'];
+	let rankingScore = query['pageToken[rankingScore]'];
+	let netUpvotes = query['pageToken[netUpvotes]'];
+	if (createdAt) pageToken.createdAt = createdAt;
+	if (rankingScore) pageToken.rankingScore = rankingScore;
+	if (netUpvotes) pageToken.netUpvotes = netUpvotes;
 	return Object.keys(pageToken).length ? pageToken : null;
-}
+};
 
 // Helper function to parse query filters
 const parseFilters = (query, entityName) => {
 	if (entityName === 'comments') {
-		const postId = query['filters[postId]']; 
+		const postId = query['filters[postId]'];
 		const view = query['filters[view]'] || 'Hot';
 		const limit = query['limit'] || 10;
 		const pageToken = formatPageToken(query);
 		return { postId, view, limit, pageToken };
-	} else { // posts
+	} else {
+		// posts
 		const subRedditId = query['filters[subRedditId]'];
 		const view = query['filters[view]'] || 'Hot';
 		const limit = query['limit'] || 10;
@@ -33,67 +35,256 @@ const parseFilters = (query, entityName) => {
 	}
 };
 
-// Helper function to fetch replies with pagination
-const fetchRepliesRecursive = async (parentCommentId, limit, pageToken) => {
-	let query = { parentCommentId };
-	let sortOption = { rankingScore: -1, createdAt: -1 }; // Replies sorted by ranking and creation time
+// Naive Approach N+1 Query
+// const fetchRepliesRecursive = async (parentCommentId, limit, pageToken) => {
+// 	let query = { parentCommentId };
+// 	let sortOption = { rankingScore: -1, createdAt: -1 }; // Replies sorted by ranking and creation time
 
-	// Handle pagination for replies
+// 	// Handle pagination for replies
+// 	if (pageToken) {
+// 		const { rankingScore, createdAt } = easyParse(pageToken);
+
+// 		query.$or = [
+// 			{ rankingScore: { $lt: rankingScore } },
+// 			{ rankingScore: rankingScore, createdAt: { $lt: new Date(createdAt) } }
+// 		]
+
+// 	}
+
+// 	const replies = await Comment.find(query).sort(sortOption).limit(parseInt(limit)).lean();
+
+// 	// Fetch replies for each reply recursively
+// 	for (const reply of replies) {
+// 		const { replies: childReplies, nextPageToken: childReplyPageToken } = await fetchRepliesRecursive(reply._id, limit, null);
+// 		reply.replies = childReplies; // Attach child replies
+// 		reply.replyNextPageToken = childReplyPageToken; // Attach pagination token for replies of replies
+// 	}
+
+// 	const nextPageToken = generateNextPageToken(replies, limit, 'Replies');
+
+// 	return { replies, nextPageToken };
+// };
+
+// Optimized Approach using Precomputed Path
+const fetchRepliesUsingParentPath = async (
+	parentCommentId,
+	parentPath,
+	limit,
+	pageToken
+) => {
+	// Build the query using the parentPath
+	let query = {
+		parentPath: { $regex: `^${parentPath}${parentCommentId}/` },
+	};
+
+	// Handle pagination for replies using pageToken
+	let sortOption = { rankingScore: -1, createdAt: -1 }; // Sort replies by ranking and creation time
 	if (pageToken) {
 		const { rankingScore, createdAt } = easyParse(pageToken);
-
-		query.$or = [
-			{ rankingScore: { $lt: rankingScore } },
-			{ rankingScore: rankingScore, createdAt: { $lt: new Date(createdAt) } }
-		]
-
+		// console.log(rankingScore);
+		// console.log(createdAt);
+		query.createdAt = { $lt: new Date(createdAt) };
+		// query.rankingScore = { $lt: rankingScore };
+		// query.$or = [
+		// 	{ rankingScore: { $lt: rankingScore } },
+		// 	{ rankingScore, createdAt: { $lt: new Date(createdAt) } },
+		// ];
 	}
+	console.log('FETCH REPLIES query: ', query);
+	console.log('SORT OPTION: ', sortOption);
+	console.log('COMMENT MODEL: ', Comment);
 
-	const replies = await Comment.find(query).sort(sortOption).limit(parseInt(limit)).lean();
+	// Fetch all replies that match the parent path, sorted and limited
+	const replies = await Comment.find(query)
+		.sort(sortOption)
+		.limit(parseInt(limit))
+		.lean();
 
-	// Fetch replies for each reply recursively
-	for (const reply of replies) {
-		const { replies: childReplies, nextPageToken: childReplyPageToken } = await fetchRepliesRecursive(reply._id, limit, null);
-		reply.replies = childReplies; // Attach child replies
-		reply.replyNextPageToken = childReplyPageToken; // Attach pagination token for replies of replies
-	}
+	console.log('FOUND REPLIES: ', replies);
+	const structuredReplies = structureReplies(replies, limit, parentCommentId);
 
-	const nextPageToken = generateNextPageToken(replies, limit, 'Replies');
+	// Generate pagination token for the next set of replies
+	const nextPageToken = generateNextPageToken(
+		structuredReplies,
+		limit,
+		'Replies'
+	);
 
-	return { replies, nextPageToken };
+	return { replies: structuredReplies, nextPageToken };
 };
 
-const buildCommentQueryAndSort = (postId, view, pageToken) => {
-	let query = { postId, parentCommentId: null }; // Fetch only top-level comments
-	let sortOption = {};
+const structureReplies = (replies, limit, topLevelId) => {
+	// Create a map where each comment ID will be the key and the value is the comment object
+	const replyMap = {};
+	const rootReplies = [];
+
+	// First, initialize each reply in the map
+	for (const reply of replies) {
+		reply.replies = []; // Initialize the replies array
+		reply.replyNextPageToken = null; // Initialize the nextPageToken for child replies
+		replyMap[reply._id] = reply;
+	}
+
+	// Now organize replies into a hierarchy based on parentCommentId
+	for (const reply of replies) {
+		console.log(reply.parentCommentId);
+		console.log(topLevelId);
+		console.log(String(reply.parentCommentId) === String(topLevelId));
+		if (String(reply.parentCommentId) !== String(topLevelId)) {
+			// If the comment has a parent, add it to its parent's replies array
+			const parentComment = replyMap[reply.parentCommentId];
+			if (parentComment) {
+				parentComment.replies.push(reply);
+			}
+		} else {
+			// If no parent, it's a top-level comment, add it to the root
+			rootReplies.push(reply);
+		}
+	}
+
+	// Generate next page token for each parent comment if the replies exceed the limit
+	for (const reply of Object.values(replyMap)) {
+		if (reply.replies.length > limit) {
+			reply.replyNextPageToken = generateNextPageToken(
+				reply.replies,
+				limit,
+				'Replies'
+			);
+			// Trim replies to fit within the limit
+			reply.replies = reply.replies.slice(0, limit);
+		}
+	}
+
+	console.log('Structured Replies: ', rootReplies);
+
+	return rootReplies;
+};
+
+// Optimized by fetching nested comments via precomputed path
+const buildCommentQueryAndSort = async (postId, view, pageToken, limit) => {
+	// let query = {
+	// 	postId,
+	// 	$or: [
+	// 		{ parentPath: '/' }, // Top-level comments
+	// 		{ parentPath: { $regex: '^/[^/]+/' } }, // One level deep replies
+	// 		{ parentPath: { $regex: '^/[^/]+/[^/]+/' } }, // Two levels deep replies
+	// 	],
+	// };
+	let paginationQuery = {};
+	let sortOption;
 
 	if (view === 'Hot') {
-		sortOption = { rankingScore: -1, ...sortOption };
+		sortOption = { rankingScore: -1, createdAt: -1 };
 		if (pageToken) {
 			const { rankingScore, createdAt } = pageToken;
-			query.$or = [
+			// query.$or = [
+			// 	{ rankingScore: { $lt: rankingScore } },
+			// 	{ rankingScore, createdAt: { $lt: new Date(createdAt) } },
+			// ];
+			patinationQuery.$or = [
 				{ rankingScore: { $lt: rankingScore } },
-				{ rankingScore, createdAt: { $lt: new Date(createdAt) } }
+				{ rankingScore, createdAt: { $lt: new Date(createdAt) } },
 			];
 		}
-	} else if (view === "New") {
+	} else if (view === 'New') {
 		sortOption = { createdAt: -1 };
 		if (pageToken) {
 			const { createdAt } = pageToken;
-			query.createdAt = { $lt: new Date(createdAt) }
+			// query.createdAt = { $lt: new Date(createdAt) };
+			patinationQuery.createdAt = { $lt: new Date(createdAt) };
 		}
 	} else if (view === 'Top') {
 		sortOption = { netUpvotes: -1, createdAt: -1 };
 		if (pageToken) {
 			const { netUpvotes, createdAt } = pageToken;
-			query.$or = [
+			// query.$or = [
+			// 	{ netUpvotes: { $lt: netUpvotes } },
+			// 	{ netUpvotes, createdAt: { $lt: new Date(createdAt) } },
+			// ];
+			patinationQuery.$or = [
 				{ netUpvotes: { $lt: netUpvotes } },
-				{ netUpvotes, createdAt: { $lt: new Date(createdAt) } }
+				{ netUpvotes, createdAt: { $lt: new Date(createdAt) } },
 			];
 		}
 	}
 
-	return { query, sortOption };
+	// MongoDB aggregation with $facet to handle both top-level comments and replies
+	return Comment.aggregate([
+		{
+			$facet: {
+				// Top-level comments (parentPath: '/')
+				topLevelComments: [
+					{
+						$match: {
+							postId: new mongoose.Types.ObjectId(postId),
+							parentPath: '/',
+							...paginationQuery,
+						},
+					},
+					{ $sort: sortOption },
+					{ $limit: parseInt(limit) }, // Limit for top-level comments
+				],
+				// Replies (one or two levels deep)
+				replies: [
+					{
+						$match: {
+							postId: new mongoose.Types.ObjectId(postId),
+							parentPath: { $regex: '^/[^/]+/' }, // Regex for nested replies
+						},
+					},
+					{ $sort: sortOption }, // Apply same sorting to replies
+					{ $limit: parseInt(limit * 2) }, // Arbitrary high limit for replies
+				],
+			},
+		},
+	]).exec();
+
+	// return { query, sortOption };
+};
+
+const structureCommentsByParentPath = (topLevelComments, replies, limit) => {
+	const commentMap = {};
+	const structuredComments = [];
+
+	// Create a map of comment _id to comment object
+	topLevelComments.forEach((comment) => {
+		commentMap[comment._id] = comment;
+		comment.replies = [];
+		comment.replyNextPageToken = null;
+		structuredComments.push(comment);
+	});
+
+	replies.forEach((reply) => {
+		const parentId = reply.parentCommentId;
+		if (parentId && commentMap[parentId]) {
+			commentMap[parentId].replies.push(reply);
+		}
+		// if (comment.parentPath === '/') {
+		// 	// This is a top-level comment
+		// 	structuredComments.push(comment);
+		// } else {
+		// 	// Find the parent comment using the parentPath and push this comment to its replies
+		// 	const parentId = comment.parentCommentId;
+		// 	if (parentId && commentMap[parentId]) {
+		// 		commentMap[parentId].replies.push(comment);
+		// 	}
+		// }
+	});
+
+	// Generate next page token for each parent comment if the replies exceed the limit
+	for (const comment of Object.values(commentMap)) {
+		if (comment.replies.length > limit) {
+			comment.replyNextPageToken = generateNextPageToken(
+				comment.replies,
+				limit,
+				'Replies'
+			);
+			// Trim replies to fit within the limit
+			comment.replies = comment.replies.slice(0, limit);
+		}
+	}
+
+	return structuredComments;
 };
 
 const buildPostsQuery = (postIds, view, pageToken) => {
@@ -112,7 +303,7 @@ const buildPostsQuery = (postIds, view, pageToken) => {
 			const { netUpvotes, createdAt } = easyParse(pageToken);
 			postsQuery = postsQuery.or([
 				{ netUpvotes: { $lt: netUpvotes } },
-				{ netUpvotes, createdAt: { $lt: new Date(createdAt) } }
+				{ netUpvotes, createdAt: { $lt: new Date(createdAt) } },
 			]);
 		}
 	} else {
@@ -121,7 +312,7 @@ const buildPostsQuery = (postIds, view, pageToken) => {
 			const { rankingScore, createdAt } = easyParse(pageToken);
 			postsQuery = postsQuery.or([
 				{ rankingScore: { $lt: rankingScore } },
-				{ rankingScore, createdAt: { $lt: new Date(createdAt) } }
+				{ rankingScore, createdAt: { $lt: new Date(createdAt) } },
 			]);
 		}
 	}
@@ -139,7 +330,7 @@ const generateNextPageToken = (items, limit, view) => {
 	if (view === 'Top') {
 		tokenData.netUpvotes = lastItem.netUpvotes;
 	} else if (view === 'Replies' || view === 'Hot') {
-		tokenData.rankingScore = lastItem.rankingScore
+		tokenData.rankingScore = lastItem.rankingScore;
 	}
 
 	return JSON.stringify(tokenData);
@@ -148,8 +339,9 @@ const generateNextPageToken = (items, limit, view) => {
 module.exports = {
 	easyParse,
 	parseFilters,
-	fetchRepliesRecursive,
+	fetchRepliesUsingParentPath,
+	structureCommentsByParentPath,
 	buildCommentQueryAndSort,
 	buildPostsQuery,
-	generateNextPageToken
-}
+	generateNextPageToken,
+};

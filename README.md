@@ -126,16 +126,12 @@ To ensure the app performs efficiently even with high traffic, the following opt
 
   - Concurrent requests use `Promise.all` for faster response times.
   - `lean()` in Mongoose for lightweight data responses.
+  - Precomputed comment paths, ranking scores, and net upvotes
 
 - **Memoization**:
 
   - Using `useCallback` and `useMemo` to minimize unnecessary re-renders.
   - Leveraging Reselect’s `createSelector` to memoize `useSelector` calls in React.
-
-- **Efficient Querying**:
-
-  - `Promise.all` handles concurrent requests, improving response times when fetching multiple data sources.
-  - Mongoose’s `.lean()` is used to return lightweight, plain JavaScript objects, reducing memory overhead.
 
 - **Lazy Loading**:
   - Components are lazy-loaded with `React.lazy()` and `Suspense`, improving initial page load times and reducing bandwidth consumption.
@@ -145,7 +141,7 @@ To ensure the app performs efficiently even with high traffic, the following opt
 - **MongoDB**: Used for database management with a sharding strategy to optimize scalability across posts, comments, votes, and users.
 - **Express**: Server framework for handling API requests and routing.
 - **React**: Frontend library for building interactive user interfaces.
-- **Node.js**: Backend runtime for executing JavaScript on the server.
+- **AWS Lambda**: Serverless microservices to handle API requests, routing, and autoscaling.
 - **Redis**: Implemented as a caching layer to store frequently accessed data and reduce response times for read-heavy operations.
 - **Mongoose**: ORM for MongoDB, used for schema definitions and efficient query handling.
 - **JWT (JSON Web Tokens)**: Used for secure authentication of users.

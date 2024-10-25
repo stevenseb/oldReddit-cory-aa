@@ -81,18 +81,15 @@ const fetchRepliesUsingParentPath = async (
 	let sortOption = { rankingScore: -1, createdAt: -1 }; // Sort replies by ranking and creation time
 	if (pageToken) {
 		const { rankingScore, createdAt } = easyParse(pageToken);
-		// console.log(rankingScore);
-		// console.log(createdAt);
-		query.createdAt = { $lt: new Date(createdAt) };
-		// query.rankingScore = { $lt: rankingScore };
-		// query.$or = [
-		// 	{ rankingScore: { $lt: rankingScore } },
-		// 	{ rankingScore, createdAt: { $lt: new Date(createdAt) } },
-		// ];
+
+		query.$or = [
+			{ rankingScore: { $lt: parseInt(rankingScore) } },
+			{
+				rankingScore: parseInt(rankingScore),
+				createdAt: { $lt: new Date(createdAt) },
+			},
+		];
 	}
-	console.log('FETCH REPLIES query: ', query);
-	console.log('SORT OPTION: ', sortOption);
-	console.log('COMMENT MODEL: ', Comment);
 
 	// Fetch all replies that match the parent path, sorted and limited
 	const replies = await Comment.find(query)
@@ -127,9 +124,6 @@ const structureReplies = (replies, limit, topLevelId) => {
 
 	// Now organize replies into a hierarchy based on parentCommentId
 	for (const reply of replies) {
-		console.log(reply.parentCommentId);
-		console.log(topLevelId);
-		console.log(String(reply.parentCommentId) === String(topLevelId));
 		if (String(reply.parentCommentId) !== String(topLevelId)) {
 			// If the comment has a parent, add it to its parent's replies array
 			const parentComment = replyMap[reply.parentCommentId];
@@ -145,13 +139,13 @@ const structureReplies = (replies, limit, topLevelId) => {
 	// Generate next page token for each parent comment if the replies exceed the limit
 	for (const reply of Object.values(replyMap)) {
 		if (reply.replies.length > limit) {
+			// Trim replies to fit within the limit
+			reply.replies = reply.replies.slice(0, limit);
 			reply.replyNextPageToken = generateNextPageToken(
 				reply.replies,
 				limit,
 				'Replies'
 			);
-			// Trim replies to fit within the limit
-			reply.replies = reply.replies.slice(0, limit);
 		}
 	}
 
@@ -176,34 +170,40 @@ const buildCommentQueryAndSort = async (postId, view, pageToken, limit) => {
 	if (view === 'Hot') {
 		sortOption = { rankingScore: -1, createdAt: -1 };
 		if (pageToken) {
-			const { rankingScore, createdAt } = pageToken;
+			const { rankingScore, createdAt } = easyParse(pageToken);
 			// query.$or = [
 			// 	{ rankingScore: { $lt: rankingScore } },
 			// 	{ rankingScore, createdAt: { $lt: new Date(createdAt) } },
 			// ];
-			patinationQuery.$or = [
-				{ rankingScore: { $lt: rankingScore } },
-				{ rankingScore, createdAt: { $lt: new Date(createdAt) } },
+			paginationQuery.$or = [
+				{ rankingScore: { $lt: parseInt(rankingScore) } },
+				{
+					rankingScore: parseInt(rankingScore),
+					createdAt: { $lt: new Date(createdAt) },
+				},
 			];
 		}
 	} else if (view === 'New') {
 		sortOption = { createdAt: -1 };
 		if (pageToken) {
-			const { createdAt } = pageToken;
+			const { createdAt } = easyParse(pageToken);
 			// query.createdAt = { $lt: new Date(createdAt) };
-			patinationQuery.createdAt = { $lt: new Date(createdAt) };
+			paginationQuery.createdAt = { $lt: new Date(createdAt) };
 		}
 	} else if (view === 'Top') {
 		sortOption = { netUpvotes: -1, createdAt: -1 };
 		if (pageToken) {
-			const { netUpvotes, createdAt } = pageToken;
+			const { netUpvotes, createdAt } = easyParse(pageToken);
 			// query.$or = [
 			// 	{ netUpvotes: { $lt: netUpvotes } },
 			// 	{ netUpvotes, createdAt: { $lt: new Date(createdAt) } },
 			// ];
-			patinationQuery.$or = [
-				{ netUpvotes: { $lt: netUpvotes } },
-				{ netUpvotes, createdAt: { $lt: new Date(createdAt) } },
+			paginationQuery.$or = [
+				{ netUpvotes: { $lt: parseInt(netUpvotes) } },
+				{
+					netUpvotes: parseInt(netUpvotes),
+					createdAt: { $lt: new Date(createdAt) },
+				},
 			];
 		}
 	}
@@ -255,6 +255,12 @@ const structureCommentsByParentPath = (topLevelComments, replies, limit) => {
 	});
 
 	replies.forEach((reply) => {
+		commentMap[reply._id] = reply;
+		reply.replies = [];
+		reply.replyNextPageToken = null;
+	});
+
+	replies.forEach((reply) => {
 		const parentId = reply.parentCommentId;
 		if (parentId && commentMap[parentId]) {
 			commentMap[parentId].replies.push(reply);
@@ -274,13 +280,13 @@ const structureCommentsByParentPath = (topLevelComments, replies, limit) => {
 	// Generate next page token for each parent comment if the replies exceed the limit
 	for (const comment of Object.values(commentMap)) {
 		if (comment.replies.length > limit) {
+			// Trim replies to fit within the limit
+			comment.replies = comment.replies.slice(0, limit);
 			comment.replyNextPageToken = generateNextPageToken(
 				comment.replies,
 				limit,
 				'Replies'
 			);
-			// Trim replies to fit within the limit
-			comment.replies = comment.replies.slice(0, limit);
 		}
 	}
 

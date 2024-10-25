@@ -64,6 +64,8 @@ exports.handler = async (event) => {
 			limit
 		);
 		const { topLevelComments, replies } = aggregatedComments[0];
+		// console.log(aggregatedComments);
+		// console.log('REPLIES: ', replies);
 		// console.log('Top Level Comments: ', topLevelComments);
 		// console.log('Replies: ', replies);
 		// const commentsAndReplies = await Comment.find(query)
@@ -74,6 +76,8 @@ exports.handler = async (event) => {
 		// console.log('FOUND TOP LEVEL COMMENTS W REPLIES: ', commentsAndReplies);
 
 		const replyLimit = 5;
+
+		console.log('TOP LEVEL COMMENTS: ', topLevelComments);
 
 		const structuredComments = structureCommentsByParentPath(
 			topLevelComments,

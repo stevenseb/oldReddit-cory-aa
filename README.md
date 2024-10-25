@@ -126,16 +126,12 @@ To ensure the app performs efficiently even with high traffic, the following opt
 
   - Concurrent requests use `Promise.all` for faster response times.
   - `lean()` in Mongoose for lightweight data responses.
+  - Precomputed comment paths, ranking scores, and net upvotes
 
 - **Memoization**:
 
   - Using `useCallback` and `useMemo` to minimize unnecessary re-renders.
   - Leveraging Reselect’s `createSelector` to memoize `useSelector` calls in React.
-
-- **Efficient Querying**:
-
-  - `Promise.all` handles concurrent requests, improving response times when fetching multiple data sources.
-  - Mongoose’s `.lean()` is used to return lightweight, plain JavaScript objects, reducing memory overhead.
 
 - **Lazy Loading**:
   - Components are lazy-loaded with `React.lazy()` and `Suspense`, improving initial page load times and reducing bandwidth consumption.

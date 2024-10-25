@@ -13,8 +13,6 @@ mongoose.connect(keys.mongoURI, {
 	useUnifiedTopology: true,
 });
 
-const Comment = require('../../../models/Comment');
-
 (async () => {
 	await redisClient.connect().catch(console.error);
 })();
@@ -41,22 +39,17 @@ exports.handler = async (event) => {
 		// Check Redis cache first
 		const cachedComments = await redisClient.get(cacheKey);
 
-		// if (cachedComments) {
-		// 	console.log('Cache hit for comments');
-		// 	let { comments, nextPageToken } = easyParse(cachedComments);
+		if (cachedComments) {
+			console.log('Cache hit for comments');
+			let { comments, nextPageToken } = easyParse(cachedComments);
 
-		// 	return {
-		// 		statusCode: 200,
-		// 		body: JSON.stringify({ comments, nextPageToken }),
-		// 	};
-		// }
+			return {
+				statusCode: 200,
+				body: JSON.stringify({ comments, nextPageToken }),
+			};
+		}
 
 		// Cache miss: Fetch from MongoDB
-		// const { query, sortOption } = buildCommentQueryAndSort(
-		// 	postId,
-		// 	view,
-		// 	pageToken
-		// );
 		const aggregatedComments = await buildCommentQueryAndSort(
 			postId,
 			view,
@@ -64,28 +57,14 @@ exports.handler = async (event) => {
 			limit
 		);
 		const { topLevelComments, replies } = aggregatedComments[0];
-		// console.log(aggregatedComments);
-		// console.log('REPLIES: ', replies);
-		// console.log('Top Level Comments: ', topLevelComments);
-		// console.log('Replies: ', replies);
-		// const commentsAndReplies = await Comment.find(query)
-		// 	.sort(sortOption)
-		// 	.limit(parseInt(limit))
-		// 	.lean();
-
-		// console.log('FOUND TOP LEVEL COMMENTS W REPLIES: ', commentsAndReplies);
 
 		const replyLimit = 5;
-
-		console.log('TOP LEVEL COMMENTS: ', topLevelComments);
 
 		const structuredComments = structureCommentsByParentPath(
 			topLevelComments,
 			replies,
 			replyLimit
 		);
-
-		console.log('Structured Comments: ', structuredComments);
 
 		const nextPageToken = generateNextPageToken(
 			structuredComments,
@@ -94,12 +73,12 @@ exports.handler = async (event) => {
 		);
 
 		// Cache the results with an expiration time
-		// redisClient.set(
-		// 	cacheKey,
-		// 	JSON.stringify({ comments: structuredComments, nextPageToken }),
-		// 	'EX',
-		// 	60 * 5
-		// ); // Cache for 5 minutes
+		redisClient.set(
+			cacheKey,
+			JSON.stringify({ comments: structuredComments, nextPageToken }),
+			'EX',
+			60 * 5
+		); // Cache for 5 minutes
 
 		return {
 			statusCode: 200,

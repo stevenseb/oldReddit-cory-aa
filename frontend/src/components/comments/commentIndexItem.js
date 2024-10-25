@@ -18,7 +18,6 @@ export const CommentIndexItem = ({ comment, parentPath = '/' }) => {
 		setLoadingReplies(true);
 
 		try {
-			console.log(parentPath);
 			const res = await axios.get(`/api/comments/${comment._id}/replies`, {
 				params: {
 					pageToken: replyNextPageToken,
@@ -28,12 +27,8 @@ export const CommentIndexItem = ({ comment, parentPath = '/' }) => {
 
 			// Update state with newly loaded replies
 			setLoadedReplies((prevReplies) => [...prevReplies, ...res.data?.replies]);
-			console.log('RETURN FROM REPLIES: ', res);
-			// if (res.data.replyNextPageToken) {
+
 			setReplyNextPageToken(res.data.replyNextPageToken);
-			// } else if (res.data.nextPageToken) {
-			// 	setReplyNextPageToken(res.data.nextPageToken)
-			// }
 		} catch (error) {
 			console.error('Error loading more replies:', error);
 		} finally {

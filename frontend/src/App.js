@@ -21,10 +21,13 @@ const composeComponents = (...components) => {
 	);
 };
 
-// TODO: Refactor comments to precompute paths for efficient querying
+// TODO: Create a new branch called MongoDB Serverless where this current version will live
+// TODO: Create a new branch for the dynamoDB refactor
 // TODO: Swap out MongoDB for DynamoDB
 // TODO: Deploy lambda endpoints to production
 // TODO: Update resume and start applying
+// TODO: Optimize fetching very deeply nested comments
+// TODO: Limit depth of nesting on comments
 // TODO: Client side caching
 // TODO: Caching of pagetokens so you can keep your spot
 // TODO: Archiving old pages
@@ -36,7 +39,6 @@ const composeComponents = (...components) => {
 // TODO: User Profiles including vote history
 // TODO: More styling
 // TODO: DELETE unused components
-// TODO: Limit depth on top level comments
 
 function App() {
 	return (
@@ -63,11 +65,7 @@ function App() {
 						path="/subReddits/new"
 						component={SubRedditForm}
 					/>
-					<ProtectedRoute
-						exact
-						path="/subReddits/:id"
-						component={PostIndex}
-					/>
+					<ProtectedRoute exact path="/subReddits/:id" component={PostIndex} />
 					{/* <ProtectedRoute exact path="/home" component={PlaceHolder} /> */}
 				</Switch>
 				<SideBar />

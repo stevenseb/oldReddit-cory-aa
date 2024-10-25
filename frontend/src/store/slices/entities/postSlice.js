@@ -5,16 +5,17 @@ import axios from 'axios';
 
 const selectPosts = (state) => state.entities.posts;
 
-export const selectPostArray = createSelector(
-	[selectPosts],
-	(posts) => (posts ? Object.values(posts) : [])
+export const selectPostArray = createSelector([selectPosts], (posts) =>
+	posts ? Object.values(posts) : []
 );
 
 export const fetchPosts = createAsyncThunk(
 	'posts/fetchAll',
-	async ({filter, pageToken}, { rejectWithValue }) => {
+	async ({ filter, pageToken }, { rejectWithValue }) => {
 		try {
-			let res = await axios.get('/api/posts', { params: { filters: filter, pageToken: pageToken}});
+			let res = await axios.get('/api/posts', {
+				params: { filters: filter, pageToken: pageToken },
+			});
 			return res.data;
 		} catch (err) {
 			return rejectWithValue(err.response.data);
@@ -75,39 +76,38 @@ const postSlice = createSlice({
 	initialState: {},
 	reducers: {
 		clearPosts: (state) => {
-			state = {};  // Clears the posts array
-			return state
-		}
+			state = {}; // Clears the posts array
+			return state;
+		},
 	},
 	extraReducers: (builder) => {
 		builder
-		.addCase(fetchPosts.fulfilled, (state, action) => {
-			console.log(action)
-			action?.payload?.posts?.forEach((post) => {
-				state[post._id] = post;
+			.addCase(fetchPosts.fulfilled, (state, action) => {
+				action?.payload?.posts?.forEach((post) => {
+					state[post._id] = post;
+				});
+				return state;
+			})
+			.addCase(fetchPost.fulfilled, (state, action) => {
+				state[action.payload._id] = action.payload;
+				return state;
+			})
+			.addCase(createPost.fulfilled, (state, action) => {
+				state[action.payload._id] = action.payload;
+				return state;
+			})
+			.addCase(updatePost.fulfilled, (state, action) => {
+				delete state[action.payload._id];
+				return state;
+			})
+			.addCase(deletePost.fulfilled, (state, action) => {
+				state[action.payload._id] = action.payload;
+				return state;
+			})
+			.addCase(createVote.fulfilled, (state, action) => {
+				state[action.payload._id] = action.payload;
+				return state;
 			});
-			return state
-		})
-		.addCase(fetchPost.fulfilled, (state, action) => {
-			state[action.payload._id] = action.payload;
-			return state
-		})
-		.addCase(createPost.fulfilled, (state, action) => {
-			state[action.payload._id] = action.payload;
-			return state
-		})
-		.addCase(updatePost.fulfilled, (state, action) => {
-			delete state[action.payload._id];
-			return state
-		})
-		.addCase(deletePost.fulfilled, (state, action) => {
-			state[action.payload._id] = action.payload;
-			return state
-		})
-		.addCase(createVote.fulfilled, (state, action) => {
-			state[action.payload._id] = action.payload;
-			return state
-		})
 	},
 });
 

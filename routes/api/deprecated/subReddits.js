@@ -1,8 +1,8 @@
 const express = require('express');
-const SubReddit = require('../../models/SubReddit');
-const UserSub = require('../../models/UserSub');
+const SubReddit = require('../../../models/SubReddit');
+const UserSub = require('../../../models/UserSub');
 const passport = require('passport');
-const validateSubRedditInput = require('../../validation/subReddit');
+const validateSubRedditInput = require('../../../validation/subReddit');
 
 const router = express.Router();
 
@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
 	try {
 		let subReddits = req.query.filters
 			? await SubReddit.find()
-			: await SubReddit.find({ userId: req.query.filters }); //.sort({ date: -1 });
+			: await SubReddit.find({ userId: req.query.filters });
 
 		res.json(subReddits);
 	} catch (err) {

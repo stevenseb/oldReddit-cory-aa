@@ -1,0 +1,9 @@
+{
+    "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3MTU3MzQzYjNlMDVlMTAyYTZmMTU3NiIsInVzZXJuYW1lIjoiRGVtbyIsImVtYWlsIjoiZGVtb0BkZW1vLmNvbSIsImlhdCI6MTcyOTY0MzU1MSwiZXhwIjoxNzI5NjQ3MTUxfQ.zdPPBw4J9Ep42BuWFJS7BokuRhFLv-gvg2-tU89MIDs"
+    },
+    "body": {
+        "postId": "67100a7ae0d14165de734cbf",
+        "body": "Lambda Comment Here"
+    }
+}

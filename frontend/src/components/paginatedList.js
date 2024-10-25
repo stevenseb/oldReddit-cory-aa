@@ -1,20 +1,27 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-require('./paginatedList.css')
+require('./paginatedList.css');
 
-const PaginatedList = ({ fetchAction, clearAction, selectData, renderItem, initialFilter, entityName }) => {
-    const [state, setState] = useState({
+const PaginatedList = ({
+	fetchAction,
+	clearAction,
+	selectData,
+	renderItem,
+	initialFilter,
+	entityName,
+}) => {
+	const [state, setState] = useState({
 		filter: initialFilter, // Default filter passed as prop
 		pageToken: null,
 	});
 
-    const [hooksReady, setHooksReady] = useState(false);
+	const [hooksReady, setHooksReady] = useState(false);
 	const [hasFetched, setHasFetched] = useState(false);
 
-    const dispatch = useDispatch();
+	const dispatch = useDispatch();
 	const items = useSelector(selectData); // Use the memoized selector for posts or comments
 
-    // Reset and update filter based on external changes (e.g., props.match.params.id)
+	// Reset and update filter based on external changes (e.g., props.match.params.id)
 	useEffect(() => {
 		setHasFetched(false);
 		dispatch(clearAction());
@@ -25,13 +32,15 @@ const PaginatedList = ({ fetchAction, clearAction, selectData, renderItem, initi
 		}));
 	}, [initialFilter, dispatch, clearAction]);
 
-    // Fetch data based on filter and pageToken
+	// Fetch data based on filter and pageToken
 	useEffect(() => {
 		const fetchData = async () => {
 			if (hasFetched) return;
 			setHasFetched(true);
-            console.log(state)
-			let res = await dispatch(fetchAction({ filter: state.filter, pageToken: state.pageToken }));
+
+			let res = await dispatch(
+				fetchAction({ filter: state.filter, pageToken: state.pageToken })
+			);
 			if (res.type === `${entityName}/fetchAll/fulfilled`) {
 				if (res.payload.nextPageToken) {
 					setState((prevState) => ({
@@ -48,9 +57,16 @@ const PaginatedList = ({ fetchAction, clearAction, selectData, renderItem, initi
 		};
 
 		fetchData();
-	}, [dispatch, state.filter, state.pageToken, hasFetched, fetchAction, entityName]);
+	}, [
+		dispatch,
+		state.filter,
+		state.pageToken,
+		hasFetched,
+		fetchAction,
+		entityName,
+	]);
 
-    if (!hooksReady) return <div>Loading...</div>;
+	if (!hooksReady) return <div>Loading...</div>;
 
 	// Load more data
 	const loadMore = () => {
@@ -73,26 +89,45 @@ const PaginatedList = ({ fetchAction, clearAction, selectData, renderItem, initi
 		});
 	};
 
-     // Conditional class for button styling based on entity type
+	// Conditional class for button styling based on entity type
 	const getButtonClass = () => {
-		return entityName === 'posts' ? 'post-filter-button' : 'comment-filter-button';
+		return entityName === 'posts'
+			? 'post-filter-button'
+			: 'comment-filter-button';
 	};
 
-    // Render list
+	// Render list
 	return (
-		<div className='filter-container'>
+		<div className="filter-container">
 			{/* Filter buttons */}
-			<div className={entityName.concat("-filters")}>
-				<button className={getButtonClass()} onClick={() => handleFilterChange("Hot")}>Hot</button>
-				<button className={getButtonClass()} onClick={() => handleFilterChange("New")}>New</button>
-				<button className={getButtonClass()} onClick={() => handleFilterChange("Top")}>Top</button>
+			<div className={entityName.concat('-filters')}>
+				<button
+					className={getButtonClass()}
+					onClick={() => handleFilterChange('Hot')}
+				>
+					Hot
+				</button>
+				<button
+					className={getButtonClass()}
+					onClick={() => handleFilterChange('New')}
+				>
+					New
+				</button>
+				<button
+					className={getButtonClass()}
+					onClick={() => handleFilterChange('Top')}
+				>
+					Top
+				</button>
 			</div>
 			{/* Render the items */}
-            
-			<ul className={entityName.concat("-list")}>{items.map((item, idx) => renderItem(item, idx))}</ul>
+
+			<ul className={entityName.concat('-list')}>
+				{items.map((item, idx) => renderItem(item, idx))}
+			</ul>
 			<button onClick={loadMore}>Load More</button>
 		</div>
 	);
-}
+};
 
 export default PaginatedList;

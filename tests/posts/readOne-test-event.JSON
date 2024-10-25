@@ -1,0 +1,12 @@
+{
+  "httpMethod": "GET",
+  "path": "/api/posts/670cbd38c922fbd4063eff45",
+  "headers": {
+    "Authorization": null
+  },
+  "pathParameters": {
+    "id": "670cbd38c922fbd4063eff45"
+  },
+  "queryStringParameters": null,
+  "body": null
+}

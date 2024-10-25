@@ -28,7 +28,11 @@ const CommentSchema = new Schema(
 		netUpvotes: {
 			type: Number,
 			default: 0,
-		},	
+		},
+		parentPath: {
+			type: String,
+			default: '/'
+		}
 	},
 	{timestamps: true}
 );

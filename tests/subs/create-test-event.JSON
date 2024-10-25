@@ -1,0 +1,9 @@
+{
+    "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3MTU3MzQzYjNlMDVlMTAyYTZmMTU3NiIsInVzZXJuYW1lIjoiRGVtbyIsImVtYWlsIjoiZGVtb0BkZW1vLmNvbSIsImlhdCI6MTcyOTQ2NjM4OCwiZXhwIjoxNzI5NDY5OTg4fQ.6KhiC9OaIm4orpUrlEetU7bYLGNTVZngZljJjmf_CYQ"
+    },
+    "body": {
+        "title": "Ask Reddit",
+        "desc": "Ask the community"
+    }
+}

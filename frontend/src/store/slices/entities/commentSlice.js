@@ -11,10 +11,12 @@ export const selectCommentsArray = createSelector(
 
 export const fetchComments = createAsyncThunk(
 	'comments/fetchAll',
-	async ({filter, pageToken}, { rejectWithValue }) => {
-		console.log(filter, pageToken)
+	async ({ filter, pageToken }, { rejectWithValue }) => {
+		console.log(filter, pageToken);
 		try {
-			let res = await axios.get('/api/comments', { params: { filters: filter, pageToken: pageToken}});
+			let res = await axios.get('/api/comments', {
+				params: { filters: filter, pageToken: pageToken },
+			});
 			return res.data;
 		} catch (err) {
 			return rejectWithValue(err.response.data);
@@ -57,41 +59,43 @@ const commentSlice = createSlice({
 	},
 	extraReducers: (builder) => {
 		builder
-		.addCase(fetchComments.fulfilled, (state, action) => {
-			console.log(action)
-			action?.payload?.comments?.forEach((comment) => {
-				state[comment._id] = comment;
-			});
-			return state
-		})
-		.addCase(createComment.fulfilled, (state, action) => {
-			if (!action.payload.parentCommentId) {
-				state[action.payload._id] = action.payload;
-			} else {
-				const _recursiveInsert = (arr) => {
-					for (let i = 0; i < arr.length; i++) {
-						let obj = arr[i];
-						if (obj._id === action.payload.parentCommentId) {
-							(obj.replies = obj.replies || []).push(action.payload);
-							return;
-						}
-						if (!obj.replies) continue;
-						for (let j = 0; j < obj.replies.length; j++) {
-							let child = obj.replies[j];
-							if (child._id === action.payload.parentCommentId) {
-								return (child.replies = child.replies || []).push(action.payload);
-							} else {
-								if (child.replies) return _recursiveInsert(child.replies);
+			.addCase(fetchComments.fulfilled, (state, action) => {
+				console.log(action);
+				action?.payload?.comments?.forEach((comment) => {
+					state[comment._id] = comment;
+				});
+				return state;
+			})
+			.addCase(createComment.fulfilled, (state, action) => {
+				if (!action.payload.parentCommentId) {
+					state[action.payload._id] = action.payload;
+				} else {
+					const _recursiveInsert = (arr) => {
+						for (let i = 0; i < arr.length; i++) {
+							let obj = arr[i];
+							if (obj._id === action.payload.parentCommentId) {
+								(obj.replies = obj.replies || []).push(action.payload);
+								return;
+							}
+							if (!obj.replies) continue;
+							for (let j = 0; j < obj.replies.length; j++) {
+								let child = obj.replies[j];
+								if (child._id === action.payload.parentCommentId) {
+									return (child.replies = child.replies || []).push(
+										action.payload
+									);
+								} else {
+									if (child.replies) return _recursiveInsert(child.replies);
+								}
 							}
 						}
-					}
-				};
-			_recursiveInsert(Object.values(state));
-			}
-		})
-		.addCase(deleteComment.fulfilled, (state, action) => {
-			state[action.payload._id] = action.payload;
-		})
+					};
+					_recursiveInsert(Object.values(state));
+				}
+			})
+			.addCase(deleteComment.fulfilled, (state, action) => {
+				state[action.payload._id] = action.payload;
+			});
 	},
 });
 
